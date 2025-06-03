@@ -44,6 +44,137 @@ document.addEventListener('DOMContentLoaded', () => {
     const loginPromptMessage = document.getElementById('login-prompt-message');
     let currentCalendarDate = new Date(); // For calendar navigation
 
+    // --- Crypto Helper Functions ---
+    const ENCRYPTION_KEY_NAME = 'prayerAppEncryptionKey_v1'; // Added versioning to key name
+
+    async function generateAndStoreKey() {
+        if (!window.crypto || !window.crypto.subtle) {
+            alert("Web Crypto API is not available in this browser. Reflections cannot be securely saved.");
+            return null;
+        }
+        try {
+            const key = await window.crypto.subtle.generateKey(
+                { name: 'AES-GCM', length: 256 },
+                true, // extractable: must be true to export the key
+                ['encrypt', 'decrypt']
+            );
+            const exportedKeyJWK = await window.crypto.subtle.exportKey('jwk', key);
+            localStorage.setItem(ENCRYPTION_KEY_NAME, JSON.stringify(exportedKeyJWK));
+            console.log("New encryption key generated and stored.");
+            // Show a one-time message to the user about key management.
+            // This could be made more sophisticated (e.g., only show once ever per user/browser).
+            alert("Your reflections will now be encrypted for privacy.\n\nIMPORTANT: Your unique encryption key is stored in this browser. If you clear your browser's site data (cache, local storage, etc.), this key will be lost, and you will NOT be able to decrypt previously saved reflections.\n\nYour reflections remain unreadable to anyone with access to the cloud storage, including the app administrator.");
+            
+            return key;
+        } catch (error) {
+            console.error("Error generating/storing key:", error);
+            alert("Could not set up encryption. Reflections will not be saved securely.");
+            return null;
+        }
+    }
+
+    async function getEncryptionKey() {
+        if (!window.crypto || !window.crypto.subtle) {
+            console.warn("Web Crypto API not available.");
+            return null;
+        }
+        const storedKeyJWKString = localStorage.getItem(ENCRYPTION_KEY_NAME);
+        if (storedKeyJWKString) {
+            try {
+                const jwk = JSON.parse(storedKeyJWKString);
+                return await window.crypto.subtle.importKey(
+                    'jwk',
+                    jwk,
+                    { name: 'AES-GCM', length: 256 },
+                    true, // extractable: should match how it was generated
+                    ['encrypt', 'decrypt']
+                );
+            } catch (error) {
+                console.error("Error importing stored key:", error);
+                alert("Error accessing your encryption key. Previously encrypted reflections might be unreadable. A new key will be generated if possible.");
+                // Attempt to generate a new key if import fails (old data might be lost)
+                localStorage.removeItem(ENCRYPTION_KEY_NAME); // Remove potentially corrupted key
+                return await generateAndStoreKey();
+            }
+        } else {
+            console.log("No encryption key found, generating a new one.");
+            return await generateAndStoreKey();
+        }
+    }
+
+    function arrayBufferToBase64(buffer) {
+        let binary = '';
+        const bytes = new Uint8Array(buffer);
+        const len = bytes.byteLength;
+        for (let i = 0; i < len; i++) {
+            binary += String.fromCharCode(bytes[i]);
+        }
+        return window.btoa(binary);
+    }
+
+    function base64ToArrayBuffer(base64) {
+        const binary_string = window.atob(base64);
+        const len = binary_string.length;
+        const bytes = new Uint8Array(len);
+        for (let i = 0; i < len; i++) {
+            bytes[i] = binary_string.charCodeAt(i);
+        }
+        return bytes.buffer;
+    }
+
+    async function encryptText(text) {
+        const key = await getEncryptionKey();
+        if (!key) {
+            alert("Encryption key is not available. Cannot encrypt reflection.");
+            return null;
+        }
+
+        const iv = window.crypto.getRandomValues(new Uint8Array(12)); // AES-GCM standard IV size is 12 bytes
+        const encodedText = new TextEncoder().encode(text);
+
+        try {
+            const ciphertext = await window.crypto.subtle.encrypt(
+                { name: 'AES-GCM', iv: iv },
+                key,
+                encodedText
+            );
+            return {
+                ciphertext: arrayBufferToBase64(ciphertext),
+                iv: arrayBufferToBase64(iv) // Store IV with ciphertext
+            };
+        } catch (error) {
+            console.error("Encryption failed:", error);
+            alert("Failed to encrypt reflection.");
+            return null;
+        }
+    }
+
+    async function decryptText(ciphertextBase64, ivBase64) {
+        const key = await getEncryptionKey();
+        if (!key) {
+            console.error("Decryption key not available.");
+            return "[Decryption key missing or invalid]";
+        }
+
+        try {
+            const ciphertext = base64ToArrayBuffer(ciphertextBase64);
+            const iv = base64ToArrayBuffer(ivBase64);
+
+            const decryptedBuffer = await window.crypto.subtle.decrypt(
+                { name: 'AES-GCM', iv: iv },
+                key,
+                ciphertext
+            );
+            return new TextDecoder().decode(decryptedBuffer);
+        } catch (error) {
+            console.error("Decryption failed:", error);
+            // This can happen if the key is wrong (e.g., user cleared localStorage and a new key was generated)
+            // or if the ciphertext/IV is corrupted.
+            return "[Encrypted reflection - unable to decrypt]";
+        }
+    }
+    // --- End Crypto Helper Functions ---
+
     // --- Core Logic (inspired by PrayerAssembler class) ---
 
     function groupPrompts() {
@@ -312,57 +443,63 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // --- Firestore: Save and Load Prayers ---
-    async function saveCurrentPrayer() {
+    async function saveCurrentPrayer() { // Made the function async
         if (!currentUser) {
             alert("Please log in to save your prayer.");
             return;
         }
 
-        const prayerSegments = [];
-        let prayerIsEmpty = true;
-        PRAYER_CATEGORY_ORDER.forEach(categoryName => {
+        // Use map to create promises for each segment's data, including potential async encryption
+        const segmentDataPromises = PRAYER_CATEGORY_ORDER.map(async categoryName => {
             const categoryId = `category-${categoryName.replace(/[\s/]+/g, '-')}`;
             const categoryDiv = document.getElementById(categoryId);
             if (categoryDiv) {
                 const contentP = categoryDiv.querySelector('.prayer-text');
                 const reflectionAreaContainer = categoryDiv.querySelector('.reflection-area');
-                let reflectionText = "";
+                let reflectionPayload = null;
 
                 if (reflectionAreaContainer && reflectionAreaContainer.style.display !== 'none') {
                     const reflectionTextarea = reflectionAreaContainer.querySelector('.reflection-textarea');
-                    // Only save reflection if the textarea is locked (readOnly) and has content
                     if (reflectionTextarea && reflectionTextarea.readOnly && reflectionTextarea.value.trim() !== '') {
-                        reflectionText = reflectionTextarea.value.trim();
+                        const plainTextReflection = reflectionTextarea.value.trim();
+                        const encryptedReflection = await encryptText(plainTextReflection);
+                        if (encryptedReflection) {
+                            reflectionPayload = encryptedReflection;
+                        }
+                        // If encryption fails, encryptText shows an alert, and reflectionPayload remains null.
                     }
                 }
 
                 if (contentP && contentP.textContent !== 'Loading...' && !contentP.textContent.startsWith('(No prompt available for')) {
-                    prayerSegments.push({
+                    return {
                         category: categoryName,
-                        textWithScripture: contentP.textContent, // This is the formatted string
-                        reflection: reflectionText // Add reflection text
-                    });
-                    prayerIsEmpty = false;
+                        textWithScripture: contentP.textContent,
+                        reflection: reflectionPayload
+                    };
                 }
             }
+            return undefined; // Explicitly return undefined if categoryDiv not found or content not valid
         });
 
-        if (prayerIsEmpty) {
-            alert("Cannot save an empty prayer.");
-            return;
-        }
-
         try {
+            const resolvedSegments = await Promise.all(segmentDataPromises);
+            const validSegments = resolvedSegments.filter(segment => segment !== undefined);
+
+            if (validSegments.length === 0) {
+                alert("Cannot save an empty prayer.");
+                return;
+            }
+
             await db.collection('users').doc(currentUser.uid).collection('savedPrayers').add({
-                segments: prayerSegments,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp() // Use server timestamp
+                segments: validSegments,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
             alert("Prayer saved!");
-            if (calendarContainer.style.display === 'block') { // If calendar is visible, refresh it
+            if (calendarContainer.style.display === 'block') {
                 renderCalendar();
             }
         } catch (error) {
-            console.error("Error saving prayer: ", error);
+            console.error("Error saving prayer or processing segments: ", error);
             alert("Failed to save prayer. See console for details.");
         }
     }
@@ -406,28 +543,37 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function displaySingleRecalledPrayer(prayerDoc) {
+    async function displaySingleRecalledPrayer(prayerDoc) { // Made async
         recalledPrayerDate.textContent = prayerDoc.createdAt.toDate().toLocaleDateString() + " " + prayerDoc.createdAt.toDate().toLocaleTimeString();
-        recalledPrayerContent.innerHTML = prayerDoc.segments.map(segment => {
+        
+        const segmentPromises = prayerDoc.segments.map(async segment => { // map returns promises
             let segmentHTML = `<h3>${segment.category}:</h3><p>${segment.textWithScripture}</p>`;
-            if (segment.reflection && segment.reflection.trim() !== '') {
-                segmentHTML += `<div class="saved-reflection"><p><em>Your Reflection:</em></p><p>${segment.reflection.replace(/\n/g, '<br>')}</p></div>`;
+            if (segment.reflection && typeof segment.reflection === 'object' && segment.reflection.ciphertext && segment.reflection.iv) {
+                const decryptedReflection = await decryptText(segment.reflection.ciphertext, segment.reflection.iv);
+                segmentHTML += `<div class="saved-reflection"><p><em>Your Reflection:</em></p><p>${decryptedReflection.replace(/\n/g, '<br>')}</p></div>`;
+            } else if (segment.reflection && typeof segment.reflection === 'string' && segment.reflection.trim() !== '') {
+                // Handle legacy unencrypted reflections, if any (though new ones won't be strings)
+                segmentHTML += `<div class="saved-reflection"><p><em>Your Reflection (unencrypted):</em></p><p>${segment.reflection.replace(/\n/g, '<br>')}</p></div>`;
             }
             return segmentHTML;
-        }).join('');
+        });
+
+        const resolvedSegments = await Promise.all(segmentPromises); // Wait for all decryptions
+        recalledPrayerContent.innerHTML = resolvedSegments.join('');
+
         recalledPrayerContainer.style.display = 'block';
         recalledPrayerListContainer.style.display = 'none'; // Hide list when single prayer is shown
         calendarContainer.style.display = 'none'; // Hide calendar when showing prayer
     }
 
-    function displayRecalledPrayerList(prayers, date) {
+    async function displayRecalledPrayerList(prayers, date) { // Made async
         recalledPrayerList.innerHTML = ''; // Clear previous list
         recalledPrayerListDate.textContent = date.toLocaleDateString();
 
         if (prayers.length === 0) {
             recalledPrayerList.innerHTML = '<li>No prayers saved for this day.</li>';
         } else if (prayers.length === 1) {
-            displaySingleRecalledPrayer(prayers[0]); // If only one, display it directly
+            await displaySingleRecalledPrayer(prayers[0]); // If only one, display it directly (await)
             return;
         } else {
             prayers.forEach(prayerDoc => {
@@ -436,7 +582,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Create a summary or use the first segment's category
                 const summary = prayerDoc.segments.length > 0 ? prayerDoc.segments[0].category : "Prayer";
                 listItem.textContent = `${summary} at ${prayerTime}`;
-                listItem.addEventListener('click', () => displaySingleRecalledPrayer(prayerDoc));
+                listItem.addEventListener('click', async () => { // event listener callback is async
+                    await displaySingleRecalledPrayer(prayerDoc);
+                });
                 recalledPrayerList.appendChild(listItem);
             });
         }
@@ -449,6 +597,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Initialization ---
 
     async function initializeApp() {
+        if (!window.crypto || !window.crypto.subtle) {
+            console.warn("Web Crypto API not available. Reflection encryption will be disabled.");
+            // You might want to disable reflection-related buttons or show a persistent message to the user.
+        }
+
         // Create UI structure first
         prayerContainer.innerHTML = ''; // Clear any existing content
         PRAYER_CATEGORY_ORDER.forEach(categoryName => {
@@ -554,7 +707,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 dayCell.addEventListener('click', async () => {
                     const clickedDate = new Date(year, month, day);
                     const prayersOnThisDay = await getPrayersForDay(clickedDate);
-                    displayRecalledPrayerList(prayersOnThisDay, clickedDate);
+                    await displayRecalledPrayerList(prayersOnThisDay, clickedDate); // await
                 });
             }
             calendarGrid.appendChild(dayCell);
