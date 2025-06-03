@@ -19,6 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Firebase Auth and Firestore instances
     const auth = firebase.auth();
     const db = firebase.firestore();
+    let analytics = null; // Declare analytics variable
     let currentUser = null;
 
     // UI Elements for new features
