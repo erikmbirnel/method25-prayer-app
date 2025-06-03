@@ -77,7 +77,17 @@
         // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
     </script>
+    <script src="crypto-utils.js"></script> <!-- Load crypto utilities -->
     <script src="app.js"></script>
+
+  <!-- Scripture Modal -->
+  <div id="scripture-modal" class="modal" style="display:none;">
+    <div class="modal-content">
+      <span id="close-scripture-modal-button" class="close-button">&times;</span>
+      <h3 id="scripture-modal-title">Scripture</h3>
+      <div id="scripture-modal-body">Loading...</div>
+    </div>
+  </div>
 
   <footer style="text-align: center; padding: 20px 10px; font-size: 0.8em; color: #555;">
     <p>
