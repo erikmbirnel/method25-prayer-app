@@ -666,7 +666,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (data.passages && data.passages.length > 0) {
                 scriptureModalTitle.textContent = data.canonical || reference; // Use canonical name if available
-                scriptureModalBody.innerHTML = data.passages[0]; // ESV provides HTML content
+                scriptureModalBody.innerHTML = data.passages.join(''); // Join all passage HTML strings
             } else {
                 scriptureModalBody.innerHTML = '<p>Scripture passage not found or an error occurred.</p>';
             }
