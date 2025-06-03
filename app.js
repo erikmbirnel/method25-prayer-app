@@ -625,10 +625,12 @@ document.addEventListener('DOMContentLoaded', () => {
         // IMPORTANT: Storing API tokens client-side can be a security risk.
         // For production, consider a backend proxy to protect your API token if ESV API terms require it.
         const ESV_API_BASE_URL = 'https://api.esv.org/v3/passage/html/';
+        const versesBefore = 5; // Number of verses to fetch before the queried verse
+        const versesAfter = 5;  // Number of verses to fetch after the queried verse
         const query = encodeURIComponent(reference);
 
         try {
-            const response = await fetch(`${ESV_API_BASE_URL}?q=${query}`, {
+            const response = await fetch(`${ESV_API_BASE_URL}?q=${query}&context-verses-before=${versesBefore}&context-verses-after=${versesAfter}`, {
                 method: 'GET',
                 headers: {
                     'Authorization': `Token ${ESV_API_TOKEN}`
