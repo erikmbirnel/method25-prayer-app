@@ -1,0 +1,72 @@
+body {
+    font-family: sans-serif;
+    margin: 20px;
+    background-color: #f4f4f4;
+    color: #333;
+}
+
+h1 {
+    color: #0056b3;
+}
+
+#prayer-container {
+    /* Styles from previous suggestion for context, if you like them */
+    /* background-color: #fff; */
+    /* padding: 15px; */
+    /* border-radius: 8px; */
+    /* box-shadow: 0 2px 10px rgba(0,0,0,0.1); */
+    margin-bottom: 25px; /* Space before the 'Generate Full New Prayer' button */
+}
+
+/* Basic styling for prayer segments, if you want to add them */
+.prayer-category-segment {
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+}
+.prayer-category-segment:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+.prayer-category-segment h3 {
+    margin-top: 0;
+    margin-bottom: 5px;
+    color: #3498db; /* A pleasant blue */
+}
+.prayer-category-segment .prayer-text {
+    line-height: 1.5;
+}
+
+.rerandomize-button,
+#generate-all-button {
+    color: white;
+    border: none;
+    border-radius: 8px; /* Slightly larger radius */
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    text-align: center;
+}
+
+.rerandomize-button {
+    background-color: #3498db; /* Blue */
+    padding: 16px 25px; /* Increased padding */
+    font-size: 1.1em;  /* Increased font-size */
+}
+
+#generate-all-button {
+    display: block;
+    width: 100%;
+    background-color: #2ecc71; /* Green */
+    padding: 24px; /* Increased padding */
+    font-size: 1.2em;  /* Increased font-size */
+    margin-top: 10px; /* Ensures it's not too close if #prayer-container has no bottom padding */
+    margin-bottom: 25px; /* Space after the button, before end of webpage */
+}
+
+.rerandomize-button:hover {
+    background-color: #2980b9; /* Darker Blue */
+}
+
+#generate-all-button:hover {
+    background-color: #27ae60; /* Darker Green */
+}
