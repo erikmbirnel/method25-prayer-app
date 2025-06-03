@@ -123,15 +123,29 @@ document.addEventListener('DOMContentLoaded', () => {
         backButton.disabled = true; // Initially disabled
         backButton.addEventListener('click', () => goBackCategory(categoryName));
 
+        const reflectionButton = document.createElement('button');
+        reflectionButton.textContent = 'Reflect';
+        reflectionButton.className = 'reflection-button action-button';
+        reflectionButton.addEventListener('click', () => toggleReflectionArea(categoryName));
+
         const buttonContainer = document.createElement('div');
         buttonContainer.appendChild(rerandomizeButton);
         buttonContainer.appendChild(backButton);
+        buttonContainer.appendChild(reflectionButton);
+
+        const reflectionTextarea = document.createElement('textarea');
+        reflectionTextarea.className = 'reflection-textarea';
+        reflectionTextarea.placeholder = 'Type your reflections or custom prayer here...';
+        reflectionTextarea.style.display = 'none'; // Initially hidden
+        reflectionTextarea.setAttribute('aria-label', `Reflection for ${categoryName}`);
 
         categoryDiv.appendChild(title);
         categoryDiv.appendChild(contentP);
+        categoryDiv.appendChild(reflectionTextarea); // Add textarea before buttons
         categoryDiv.appendChild(buttonContainer);
         prayerContainer.appendChild(categoryDiv);
     }
+
 
     function updateCategoryDisplay(categoryName, segmentText, promptDataObject) {
         const categoryId = `category-${categoryName.replace(/[\s/]+/g, '-')}`;
@@ -148,7 +162,20 @@ document.addEventListener('DOMContentLoaded', () => {
             if (backButton) {
                 backButton.disabled = !prayerHistory[categoryName] || prayerHistory[categoryName].length === 0;
             }
+            // Hide and clear reflection textarea when prompt changes
+            const reflectionTextarea = categoryDiv.querySelector('.reflection-textarea');
+            if (reflectionTextarea) {
+                reflectionTextarea.style.display = 'none';
+                reflectionTextarea.value = '';
+            }
         }
+    }
+
+    function toggleReflectionArea(categoryName) {
+        const categoryId = `category-${categoryName.replace(/[\s/]+/g, '-')}`;
+        const categoryDiv = document.getElementById(categoryId);
+        const reflectionTextarea = categoryDiv.querySelector('.reflection-textarea');
+        reflectionTextarea.style.display = reflectionTextarea.style.display === 'none' ? 'block' : 'none';
     }
 
     function displayFullPrayer() {
@@ -262,10 +289,18 @@ document.addEventListener('DOMContentLoaded', () => {
             const categoryDiv = document.getElementById(categoryId);
             if (categoryDiv) {
                 const contentP = categoryDiv.querySelector('.prayer-text');
+                const reflectionTextarea = categoryDiv.querySelector('.reflection-textarea');
+                let reflectionText = "";
+
+                if (reflectionTextarea && reflectionTextarea.style.display !== 'none' && reflectionTextarea.value.trim() !== '') {
+                    reflectionText = reflectionTextarea.value.trim();
+                }
+
                 if (contentP && contentP.textContent !== 'Loading...' && !contentP.textContent.startsWith('(No prompt available for')) {
                     prayerSegments.push({
                         category: categoryName,
-                        textWithScripture: contentP.textContent // This is the formatted string
+                        textWithScripture: contentP.textContent, // This is the formatted string
+                        reflection: reflectionText // Add reflection text
                     });
                     prayerIsEmpty = false;
                 }
@@ -333,9 +368,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function displaySingleRecalledPrayer(prayerDoc) {
         recalledPrayerDate.textContent = prayerDoc.createdAt.toDate().toLocaleDateString() + " " + prayerDoc.createdAt.toDate().toLocaleTimeString();
-        recalledPrayerContent.innerHTML = prayerDoc.segments.map(segment => 
-            `<h3>${segment.category}:</h3><p>${segment.textWithScripture}</p>`
-        ).join('');
+        recalledPrayerContent.innerHTML = prayerDoc.segments.map(segment => {
+            let segmentHTML = `<h3>${segment.category}:</h3><p>${segment.textWithScripture}</p>`;
+            if (segment.reflection && segment.reflection.trim() !== '') {
+                segmentHTML += `<div class="saved-reflection"><p><em>Your Reflection:</em></p><p>${segment.reflection.replace(/\n/g, '<br>')}</p></div>`;
+            }
+            return segmentHTML;
+        }).join('');
         recalledPrayerContainer.style.display = 'block';
         recalledPrayerListContainer.style.display = 'none'; // Hide list when single prayer is shown
         calendarContainer.style.display = 'none'; // Hide calendar when showing prayer
