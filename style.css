@@ -197,6 +197,12 @@ h1 {
     background-color: #e9e9e9;
 }
 
+.reflection-area { /* Container for textarea and its save button */
+    margin-top: 10px;
+    margin-bottom: 10px;
+    position: relative; /* For positioning the save button if needed */
+}
+
 .reflection-textarea {
     width: 98%; /* Take most of the width */
     min-height: 80px;
@@ -208,6 +214,21 @@ h1 {
     font-family: sans-serif;
     font-size: 0.95em;
     box-sizing: border-box; /* Include padding and border in the element's total width and height */
+}
+
+.reflection-textarea.frozen {
+    font-style: italic;
+    color: #0056b3; /* Blue text */
+    background-color: #f0f8ff; /* Alice blue - subtle background change */
+    border-color: #add8e6; /* Light blue border */
+}
+
+.save-reflection-button {
+    display: block; /* Or inline-block and float right */
+    margin-top: 5px;
+    margin-left: auto; /* Pushes to the right if container is flex or if it's block */
+    padding: 5px 10px;
+    font-size: 0.85em;
 }
 
 .saved-reflection {

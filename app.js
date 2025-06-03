@@ -133,19 +133,29 @@ document.addEventListener('DOMContentLoaded', () => {
         buttonContainer.appendChild(backButton);
         buttonContainer.appendChild(reflectionButton);
 
+        const reflectionAreaContainer = document.createElement('div');
+        reflectionAreaContainer.className = 'reflection-area';
+        reflectionAreaContainer.style.display = 'none'; // Initially hidden
+
         const reflectionTextarea = document.createElement('textarea');
         reflectionTextarea.className = 'reflection-textarea';
         reflectionTextarea.placeholder = 'Type your reflections or custom prayer here...';
-        reflectionTextarea.style.display = 'none'; // Initially hidden
         reflectionTextarea.setAttribute('aria-label', `Reflection for ${categoryName}`);
+
+        const saveReflectionButton = document.createElement('button');
+        saveReflectionButton.textContent = 'Lock Reflection';
+        saveReflectionButton.className = 'save-reflection-button action-button'; // Use action-button for base styling
+        saveReflectionButton.addEventListener('click', () => handleLockReflectionClick(categoryName));
+
+        reflectionAreaContainer.appendChild(reflectionTextarea);
+        reflectionAreaContainer.appendChild(saveReflectionButton);
 
         categoryDiv.appendChild(title);
         categoryDiv.appendChild(contentP);
-        categoryDiv.appendChild(reflectionTextarea); // Add textarea before buttons
+        categoryDiv.appendChild(reflectionAreaContainer); // Add the container for textarea and its lock button
         categoryDiv.appendChild(buttonContainer);
         prayerContainer.appendChild(categoryDiv);
     }
-
 
     function updateCategoryDisplay(categoryName, segmentText, promptDataObject) {
         const categoryId = `category-${categoryName.replace(/[\s/]+/g, '-')}`;
@@ -162,11 +172,20 @@ document.addEventListener('DOMContentLoaded', () => {
             if (backButton) {
                 backButton.disabled = !prayerHistory[categoryName] || prayerHistory[categoryName].length === 0;
             }
-            // Hide and clear reflection textarea when prompt changes
-            const reflectionTextarea = categoryDiv.querySelector('.reflection-textarea');
-            if (reflectionTextarea) {
-                reflectionTextarea.style.display = 'none';
-                reflectionTextarea.value = '';
+            // Hide, clear, and unlock reflection area when prompt changes
+            const reflectionAreaContainer = categoryDiv.querySelector('.reflection-area');
+            if (reflectionAreaContainer) {
+                reflectionAreaContainer.style.display = 'none';
+                const reflectionTextarea = reflectionAreaContainer.querySelector('.reflection-textarea');
+                const saveReflectionButton = reflectionAreaContainer.querySelector('.save-reflection-button');
+                if (reflectionTextarea) {
+                    reflectionTextarea.value = '';
+                    reflectionTextarea.readOnly = false;
+                    reflectionTextarea.classList.remove('frozen');
+                }
+                if (saveReflectionButton) {
+                    saveReflectionButton.textContent = 'Lock Reflection';
+                }
             }
         }
     }
@@ -174,8 +193,25 @@ document.addEventListener('DOMContentLoaded', () => {
     function toggleReflectionArea(categoryName) {
         const categoryId = `category-${categoryName.replace(/[\s/]+/g, '-')}`;
         const categoryDiv = document.getElementById(categoryId);
+        const reflectionAreaContainer = categoryDiv.querySelector('.reflection-area');
+        reflectionAreaContainer.style.display = reflectionAreaContainer.style.display === 'none' ? 'block' : 'none';
+        if (reflectionAreaContainer.style.display === 'block') {
+            const reflectionTextarea = reflectionAreaContainer.querySelector('.reflection-textarea');
+            if (!reflectionTextarea.readOnly) { // Only focus if not already locked
+                reflectionTextarea.focus();
+            }
+        }
+    }
+
+    function handleLockReflectionClick(categoryName) {
+        const categoryId = `category-${categoryName.replace(/[\s/]+/g, '-')}`;
+        const categoryDiv = document.getElementById(categoryId);
         const reflectionTextarea = categoryDiv.querySelector('.reflection-textarea');
-        reflectionTextarea.style.display = reflectionTextarea.style.display === 'none' ? 'block' : 'none';
+        const lockButton = categoryDiv.querySelector('.save-reflection-button');
+
+        reflectionTextarea.readOnly = !reflectionTextarea.readOnly; // Toggle readOnly state
+        reflectionTextarea.classList.toggle('frozen');
+        lockButton.textContent = reflectionTextarea.readOnly ? 'Edit Reflection' : 'Lock Reflection';
     }
 
     function displayFullPrayer() {
@@ -289,11 +325,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const categoryDiv = document.getElementById(categoryId);
             if (categoryDiv) {
                 const contentP = categoryDiv.querySelector('.prayer-text');
-                const reflectionTextarea = categoryDiv.querySelector('.reflection-textarea');
+                const reflectionAreaContainer = categoryDiv.querySelector('.reflection-area');
                 let reflectionText = "";
 
-                if (reflectionTextarea && reflectionTextarea.style.display !== 'none' && reflectionTextarea.value.trim() !== '') {
-                    reflectionText = reflectionTextarea.value.trim();
+                if (reflectionAreaContainer && reflectionAreaContainer.style.display !== 'none') {
+                    const reflectionTextarea = reflectionAreaContainer.querySelector('.reflection-textarea');
+                    // Only save reflection if the textarea is locked (readOnly) and has content
+                    if (reflectionTextarea && reflectionTextarea.readOnly && reflectionTextarea.value.trim() !== '') {
+                        reflectionText = reflectionTextarea.value.trim();
+                    }
                 }
 
                 if (contentP && contentP.textContent !== 'Loading...' && !contentP.textContent.startsWith('(No prompt available for')) {
