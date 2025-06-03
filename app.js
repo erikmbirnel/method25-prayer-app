@@ -633,14 +633,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         scriptureModalTitle.textContent = `Loading: ${reference}`;
-        scriptureModalBody.innerHTML = '<em>Fetching scripture text...</em>';
+        scriptureModalBody.innerHTML = '<em>Looking up the passage...</em>';
         showScriptureModal();
 
         // IMPORTANT: Storing API tokens client-side can be a security risk.
         // For production, consider a backend proxy to protect your API token if ESV API terms require it.
         const ESV_API_BASE_URL = 'https://api.esv.org/v3/passage/html/';
-        const versesBefore = 5; // Number of verses to fetch before the queried verse
-        const versesAfter = 5;  // Number of verses to fetch after the queried verse
+        const versesBefore = 1; // Number of verses to fetch before the queried verse
+        const versesAfter = 1;  // Number of verses to fetch after the queried verse
         const query = encodeURIComponent(reference);
 
         try {
