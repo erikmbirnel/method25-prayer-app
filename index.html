@@ -45,11 +45,12 @@
                 <!-- Calendar days will be dynamically inserted here -->
             </div>
         </div>
-        <div id="recalled-prayer-container" style="margin-top: 15px; display:none;">
-            <div id="recalled-prayer-list-container" style="margin-bottom:15px;">
+        <!-- Moved recalled-prayer-list-container to be a sibling -->
+        <div id="recalled-prayer-list-container" style="margin-top: 15px; margin-bottom:15px; display:none;">
                 <h4>Prayers for <span id="recalled-prayer-list-date"></span>:</h4>
                 <ul id="recalled-prayer-list"></ul>
             </div>
+        <div id="recalled-prayer-container" style="margin-top: 15px; display:none;">
             <h3>Prayer for <span id="recalled-prayer-date"></span></h3>
             <div id="recalled-prayer-content"></div>
             <button id="close-recalled-prayer-button">Close Prayer</button>
