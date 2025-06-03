@@ -70,3 +70,54 @@ h1 {
 #generate-all-button:hover {
     background-color: #27ae60; /* Darker Green */
 }
+/* Add to your style.css */
+#auth-container {
+    margin-bottom: 20px;
+    padding: 10px;
+    background-color: #f0f0f0;
+    border-radius: 5px;
+}
+
+.calendar {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 5px;
+    border: 1px solid #ccc;
+    padding: 10px;
+    max-width: 400px; /* Adjust as needed */
+    margin: 0 auto;
+}
+
+.calendar-day {
+    padding: 10px;
+    text-align: center;
+    border: 1px solid #eee;
+    cursor: default;
+}
+
+.calendar-day.has-prayer {
+    background-color: #a0e0a0; /* Light green for days with prayers */
+    cursor: pointer;
+    font-weight: bold;
+}
+
+#calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    max-width: 400px; /* Match calendar width */
+    margin-left: auto;
+    margin-right: auto;
+}
+
+#recalled-prayer-container {
+    border: 1px solid #ccc;
+    padding: 15px;
+    margin-top: 20px;
+    background-color: #f9f9f9;
+}
+
+#recalled-prayer-container h3 {
+    margin-top: 0;
+}

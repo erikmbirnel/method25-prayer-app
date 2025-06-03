@@ -15,12 +15,60 @@
 <body>
     <h1>A Method for Prayer by Matthew Henry</h1>
 
+    <div id="auth-container">
+        <button id="login-button" class="action-button">Login with Google</button>
+        <span id="user-status" style="margin-left: 10px;">Not logged in</span>
+        <button id="logout-button" class="action-button" style="display:none; margin-left: 10px;">Logout</button>
+    </div>
+
     <div id="prayer-container">
         <!-- Prayer categories will be dynamically inserted here by app.js -->
     </div>
 
-    <button id="generate-all-button" class="action-button">Generate Full New Prayer</button>
+    <div id="prayer-actions-container" style="margin-top: 20px;">
+        <button id="generate-all-button" class="action-button">Generate Full New Prayer</button>
+        <button id="save-prayer-button" class="action-button" style="display:none; margin-left: 10px;">Save Current Prayer</button>
+    </div>
 
+    <div id="saved-prayers-section" style="margin-top: 30px; display:none;">
+        <h2>My Saved Prayers</h2>
+        <button id="view-calendar-button" class="action-button">View Calendar</button>
+        <div id="calendar-container" style="margin-top: 15px; display:none;">
+            <div id="calendar-header">
+                <button id="prev-month-button">&lt; Prev</button>
+                <span id="current-month-year">Month Year</span>
+                <button id="next-month-button">Next &gt;</button>
+            </div>
+            <div id="calendar-grid" class="calendar">
+                <!-- Calendar days will be dynamically inserted here -->
+            </div>
+        </div>
+        <div id="recalled-prayer-container" style="margin-top: 15px; display:none;">
+            <h3>Prayer for <span id="recalled-prayer-date"></span></h3>
+            <div id="recalled-prayer-content"></div>
+            <button id="close-recalled-prayer-button">Close Prayer</button>
+        </div>
+    </div>
+
+    <!-- Firebase SDKs - update to latest versions as desired -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+
+    <script>
+        // IMPORTANT: Replace with your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBP_AfaNMXsY7eGtXj8oZqHTM1fF8KdN30",
+            authDomain: "method25.firebaseapp.com",
+            projectId: "method25",
+            storageBucket: "method25.firebasestorage.app",
+            messagingSenderId: "20430183483",
+            appId: "1:20430183483:web:3f6b8fe1acafb8c3d2101e",
+            measurementId: "G-Q6S44Y6Y8Z" // Optional
+        };
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+    </script>
     <script src="app.js"></script>
 </body>
 </html>
