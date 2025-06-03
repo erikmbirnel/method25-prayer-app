@@ -44,6 +44,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const loginPromptMessage = document.getElementById('login-prompt-message');
     let currentCalendarDate = new Date(); // For calendar navigation
 
+    // Scripture Modal UI Elements (assuming they are in index.html)
+    const scriptureModal = document.getElementById('scripture-modal');
+    const scriptureModalTitle = document.getElementById('scripture-modal-title');
+    const scriptureModalBody = document.getElementById('scripture-modal-body');
+    const closeScriptureModalButton = document.getElementById('close-scripture-modal-button');
+
+    const ESV_API_TOKEN = '78cd4c38aea5c20fcc99a63529076bc602be3848'; // Your ESV API Token
+
     // --- Crypto Helper Functions ---
     const ENCRYPTION_KEY_NAME = 'prayerAppEncryptionKey_v1'; // Added versioning to key name
 
@@ -212,21 +220,30 @@ document.addEventListener('DOMContentLoaded', () => {
         return null;
     }
 
-    function formatSegment(categoryName, promptData) {
+    function escapeHTML(str) {
+        const div = document.createElement('div');
+        div.appendChild(document.createTextNode(str));
+        return div.innerHTML;
+    }
+
+    function formatSegment(categoryName, promptData) { // Modified to include clickable scripture links
         if (!promptData) {
             return `(No prompt available for ${categoryName})`;
         }
 
-        const text = promptData.prompt || "";
+        const promptText = promptData.prompt || "";
+        const escapedPromptText = escapeHTML(promptText); // Escape main prompt text
+
         const scriptureRefsList = promptData.scripture_references || [];
-        let scriptureDisplay = "";
+        let scriptureLinksHTML = "";
 
         if (scriptureRefsList.length > 0) {
-            // Join with ". " if multiple, or just use the single one.
-            const formattedScriptures = scriptureRefsList.join(". ");
-            scriptureDisplay = ` (${formattedScriptures})`;
+            const links = scriptureRefsList.map(ref =>
+                `<a href="#" class="scripture-link" data-reference="${encodeURIComponent(ref)}">${escapeHTML(ref)}</a>`
+            ).join(" &bull; "); // Using a bullet point as separator
+            scriptureLinksHTML = ` <span class="scripture-references">(${links})</span>`;
         }
-        return `${text}${scriptureDisplay}`;
+        return `${escapedPromptText}${scriptureLinksHTML}`;
     }
 
     // --- UI Manipulation ---
@@ -296,7 +313,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (categoryDiv) {
             const contentP = categoryDiv.querySelector('.prayer-text');
             if (contentP) {
-                contentP.textContent = segmentText;
+                contentP.innerHTML = segmentText; // Changed to innerHTML to render scripture links
             }
             // Update back button state
             const backButton = categoryDiv.querySelector('.back-button');
@@ -593,6 +610,65 @@ document.addEventListener('DOMContentLoaded', () => {
         calendarContainer.style.display = 'none'; // Hide calendar
     }
 
+    // --- ESV Scripture API Functions ---
+    async function fetchAndDisplayScripture(reference) {
+        if (!scriptureModal || !scriptureModalTitle || !scriptureModalBody) {
+            console.error("Scripture modal elements not found in the DOM.");
+            alert("Cannot display scripture: UI elements missing.");
+            return;
+        }
+
+        scriptureModalTitle.textContent = `Loading: ${reference}`;
+        scriptureModalBody.innerHTML = '<em>Fetching scripture text...</em>';
+        showScriptureModal();
+
+        // IMPORTANT: Storing API tokens client-side can be a security risk.
+        // For production, consider a backend proxy to protect your API token if ESV API terms require it.
+        const ESV_API_BASE_URL = 'https://api.esv.org/v3/passage/html/';
+        const query = encodeURIComponent(reference);
+
+        try {
+            const response = await fetch(`${ESV_API_BASE_URL}?q=${query}`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Token ${ESV_API_TOKEN}`
+                }
+            });
+
+            if (!response.ok) {
+                let errorMsg = `Error fetching scripture: ${response.status} ${response.statusText}`;
+                try {
+                    const errorData = await response.json();
+                    if (errorData && errorData.detail) { // ESV API often returns error details in 'detail'
+                        errorMsg += ` - ${errorData.detail}`;
+                    }
+                } catch (e) { /* Response might not be JSON */ }
+                throw new Error(errorMsg);
+            }
+
+            const data = await response.json();
+
+            if (data.passages && data.passages.length > 0) {
+                scriptureModalTitle.textContent = data.canonical || reference; // Use canonical name if available
+                scriptureModalBody.innerHTML = data.passages[0]; // ESV provides HTML content
+            } else {
+                scriptureModalBody.innerHTML = '<p>Scripture passage not found or an error occurred.</p>';
+            }
+        } catch (error) {
+            console.error("Failed to fetch or display scripture:", error);
+            scriptureModalBody.innerHTML = `<p>Sorry, could not load scripture. ${error.message}</p>`;
+            scriptureModalTitle.textContent = "Error";
+        }
+    }
+
+    function showScriptureModal() {
+        if (scriptureModal) scriptureModal.style.display = 'block';
+    }
+
+    function hideScriptureModal() {
+        if (scriptureModal) scriptureModal.style.display = 'none';
+        if (scriptureModalBody) scriptureModalBody.innerHTML = ''; // Clear content
+    }
 
     // --- Initialization ---
 
@@ -675,6 +751,28 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
         }
+
+        // Event listener for closing the scripture modal
+        if (closeScriptureModalButton) {
+            closeScriptureModalButton.addEventListener('click', hideScriptureModal);
+        }
+
+        // Event delegation for scripture links on the prayer container
+        prayerContainer.addEventListener('click', async (event) => {
+            const target = event.target.closest('.scripture-link'); // Use closest to handle clicks on child elements if any
+            if (target && target.dataset.reference) {
+                event.preventDefault(); // Prevent default <a> tag behavior
+                const reference = decodeURIComponent(target.dataset.reference);
+                await fetchAndDisplayScripture(reference);
+            }
+        });
+
+        // Optional: Close modal on Escape key press
+        window.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && scriptureModal && scriptureModal.style.display !== 'none') {
+                hideScriptureModal();
+            }
+        });
     }
 
     // --- Calendar UI ---
