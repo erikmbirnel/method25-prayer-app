@@ -1,6 +1,6 @@
 {
-    "name": "My Prayer App",
-    "short_name": "MyPrayer",
+    "name": "A Method for Prayer by Matthew Henry",
+    "short_name": "Method Prayer",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#ffffff",
