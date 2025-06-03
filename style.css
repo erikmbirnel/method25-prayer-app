@@ -219,8 +219,10 @@ h1 {
 .reflection-textarea.frozen {
     font-style: italic;
     color: #0056b3; /* Blue text */
-    background-color: #f0f8ff; /* Alice blue - subtle background change */
-    border-color: #add8e6; /* Light blue border */
+    background-color: transparent; /* Make background transparent */
+    border-color: transparent; /* Make border transparent */
+    resize: none; /* Optional: prevent resizing when frozen */
+    /* The existing padding will still apply, giving some space around the text */
 }
 
 .save-reflection-button {
@@ -237,4 +239,18 @@ h1 {
     margin-top: 5px;
     border-left: 3px solid #f1c40f; /* Yellow accent border */
     font-style: italic;
+}
+
+/* --- Close Recalled Prayer Button --- */
+#close-recalled-prayer-button {
+    background-color: #7f8c8d; /* Grey, similar to back-button or a neutral close color */
+    font-size: 1.1em; /* Match other prominent secondary buttons */
+    display: block; /* Make it take full width of its container */
+    width: 100%;
+    margin-top: 20px; /* Add some space above it */
+    box-sizing: border-box; /* Ensure padding doesn't expand width beyond 100% */
+}
+
+#close-recalled-prayer-button:hover:not(:disabled) {
+    background-color: #6c7a7b; /* Darker Grey */
 }
