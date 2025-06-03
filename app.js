@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let allPromptsData = [];
     let groupedByCategory = {};
     let prayerHistory = {}; // For the "Back" button feature
+    let currentPromptsDisplayed = {}; // Tracks the current prompt object for each category
     const prayerContainer = document.getElementById('prayer-container');
     const generateAllButton = document.getElementById('generate-all-button');
 
@@ -48,6 +49,8 @@ document.addEventListener('DOMContentLoaded', () => {
     function groupPrompts() {
         groupedByCategory = {}; // Reset
         if (!allPromptsData) return;
+        prayerHistory = {}; // Reset history
+        currentPromptsDisplayed = {}; // Reset current displayed prompts
 
         for (const item of allPromptsData) {
             const category = item.prayer_category || "Uncategorized";
@@ -61,6 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Initialize prayer history
         for (const categoryName of PRAYER_CATEGORY_ORDER) {
             prayerHistory[categoryName] = [];
+            currentPromptsDisplayed[categoryName] = null; // Initialize as null
         }
     }
 
@@ -129,9 +133,11 @@ document.addEventListener('DOMContentLoaded', () => {
         prayerContainer.appendChild(categoryDiv);
     }
 
-    function updateCategoryDisplay(categoryName, segmentText) {
+    function updateCategoryDisplay(categoryName, segmentText, promptDataObject) {
         const categoryId = `category-${categoryName.replace(/[\s/]+/g, '-')}`;
         const categoryDiv = document.getElementById(categoryId);
+        currentPromptsDisplayed[categoryName] = promptDataObject; // Store the current prompt object (or null)
+
         if (categoryDiv) {
             const contentP = categoryDiv.querySelector('.prayer-text');
             if (contentP) {
@@ -153,19 +159,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         for (const categoryName of PRAYER_CATEGORY_ORDER) {
             // Save current prompt to history before getting a new one
-            const currentCategoryDiv = document.getElementById(`category-${categoryName.replace(/[\s/]+/g, '-')}`);
-            if (currentCategoryDiv) {
-                const currentContentP = currentCategoryDiv.querySelector('.prayer-text');
-                if (currentContentP && currentContentP.textContent !== 'Loading...' && !currentContentP.textContent.startsWith('(No prompt available')) {
-                     // Find the promptData that matches currentContentP.textContent
-                    const currentPromptData = (groupedByCategory[categoryName] || []).find(p => formatSegment(categoryName, p) === currentContentP.textContent);
-                    if (currentPromptData) recordHistory(categoryName, currentPromptData);
-                }
+            // Use the stored promptData object directly
+            if (currentPromptsDisplayed[categoryName]) { // Check if it's not null (i.e., not a placeholder)
+                recordHistory(categoryName, currentPromptsDisplayed[categoryName]);
             }
 
-            const promptData = getRandomPromptForCategory(categoryName);
+            const promptData = getRandomPromptForCategory(categoryName); // This can be null
             const segmentText = formatSegment(categoryName, promptData);
-            updateCategoryDisplay(categoryName, segmentText);
+            updateCategoryDisplay(categoryName, segmentText, promptData); // Pass the new promptData (or null)
         }
     }
 
@@ -179,24 +180,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function reRandomizeCategory(categoryName) {
         // Save current prompt to history before getting a new one
-        const categoryDiv = document.getElementById(`category-${categoryName.replace(/[\s/]+/g, '-')}`);
-        if (categoryDiv) {
-            const contentP = categoryDiv.querySelector('.prayer-text');
-            if (contentP && contentP.textContent !== 'Loading...' && !contentP.textContent.startsWith('(No prompt available')) {
-                const currentPromptData = (groupedByCategory[categoryName] || []).find(p => formatSegment(categoryName, p) === contentP.textContent);
-                if (currentPromptData) recordHistory(categoryName, currentPromptData);
-            }
+        // Use the stored promptData object directly
+        if (currentPromptsDisplayed[categoryName]) { // Check if it's not null
+            recordHistory(categoryName, currentPromptsDisplayed[categoryName]);
         }
 
-        const promptData = getRandomPromptForCategory(categoryName);
+        const promptData = getRandomPromptForCategory(categoryName); // This can be null
         const segmentText = formatSegment(categoryName, promptData);
-        updateCategoryDisplay(categoryName, segmentText);
+        updateCategoryDisplay(categoryName, segmentText, promptData); // Pass the new promptData (or null)
     }
     function goBackCategory(categoryName) {
         if (prayerHistory[categoryName] && prayerHistory[categoryName].length > 0) {
-            const previousPromptData = prayerHistory[categoryName].shift(); // Get and remove the most recent history item
+            const previousPromptData = prayerHistory[categoryName].shift(); // This will be a valid promptData object
             const segmentText = formatSegment(categoryName, previousPromptData);
-            updateCategoryDisplay(categoryName, segmentText);
+            updateCategoryDisplay(categoryName, segmentText, previousPromptData); // Pass the restored promptData
         }
     }
 
