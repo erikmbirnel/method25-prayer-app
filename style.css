@@ -37,14 +37,26 @@ h1 {
     line-height: 1.5;
 }
 
-.rerandomize-button,
-#generate-all-button {
+/* --- General Button Styling --- */
+.action-button {
+    background-color: #5dade2; /* Default blue */
     color: white;
+    padding: 12px 18px;
     border: none;
-    border-radius: 8px; /* Slightly larger radius */
+    border-radius: 6px;
     cursor: pointer;
-    transition: background-color 0.3s ease;
+    transition: background-color 0.3s ease, transform 0.1s ease;
     text-align: center;
+    font-size: 1em;
+    margin: 5px; /* Add some default margin */
+}
+
+.action-button:hover:not(:disabled) {
+    opacity: 0.9;
+}
+
+.action-button:active:not(:disabled) {
+    transform: translateY(1px);
 }
 
 .rerandomize-button {
@@ -52,30 +64,70 @@ h1 {
     padding: 16px 25px; /* Increased padding */
     font-size: 1.1em;  /* Increased font-size */
 }
+.back-button {
+    background-color: #7f8c8d; /* Grey for back button */
+    padding: 8px 12px;
+    font-size: 0.9em;
+    margin-left: 10px; /* Space it from the refresh button */
+}
 
-#generate-all-button {
+/* --- Specific Action Buttons --- */
+#generate-all-button.primary-action {
     display: block;
     width: 100%;
     background-color: #2ecc71; /* Green */
     padding: 24px; /* Increased padding */
     font-size: 1.2em;  /* Increased font-size */
-    margin-top: 10px; /* Ensures it's not too close if #prayer-container has no bottom padding */
+    margin-top: 10px;
     margin-bottom: 25px; /* Space after the button, before end of webpage */
+    box-sizing: border-box; /* Ensure padding doesn't expand width beyond 100% */
 }
 
-.rerandomize-button:hover {
+#save-prayer-button.save-action {
+    background-color: #f1c40f; /* Pleasant Yellow */
+    font-size: 1.1em;
+}
+
+#view-calendar-button.view-saved-action {
+    background-color: #e67e22; /* Complementary Orange/Brown */
+    font-size: 1.1em;
+}
+
+/* --- Button Hover States --- */
+.rerandomize-button:hover:not(:disabled) {
     background-color: #2980b9; /* Darker Blue */
 }
+.back-button:hover:not(:disabled) {
+    background-color: #6c7a7b; /* Darker Grey */
+}
 
-#generate-all-button:hover {
+#generate-all-button.primary-action:hover:not(:disabled) {
     background-color: #27ae60; /* Darker Green */
 }
-/* Add to your style.css */
+
+#save-prayer-button.save-action:hover:not(:disabled) {
+    background-color: #d4ac0d; /* Darker Yellow */
+}
+
+#view-calendar-button.view-saved-action:hover:not(:disabled) {
+    background-color: #ca6f1e; /* Darker Orange/Brown */
+}
+
+/* --- Auth Area Styling --- */
+.auth-button { /* For login button specifically if it needs different base from action-button */
+    padding: 8px 15px;
+    background-color: #3498db; /* Blue */
+}
 #auth-container {
     margin-bottom: 20px;
     padding: 10px;
     background-color: #f0f0f0;
     border-radius: 5px;
+}
+
+#login-prompt-message {
+    font-size: 0.9em;
+    color: #555;
 }
 
 .calendar {
@@ -120,4 +172,18 @@ h1 {
 
 #recalled-prayer-container h3 {
     margin-top: 0;
+}
+
+#recalled-prayer-list {
+    list-style-type: none;
+    padding: 0;
+}
+
+#recalled-prayer-list li {
+    padding: 8px;
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+}
+#recalled-prayer-list li:hover {
+    background-color: #e9e9e9;
 }

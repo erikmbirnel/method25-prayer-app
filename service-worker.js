@@ -6,8 +6,8 @@ const urlsToCache = [
     '/app.js',
     '/manifest.json',
     '/icons/icon-192.png',
-    '/icons/icon-512.png'
-    // Add paths to other assets (like your JSON data for prompts) here later
+    '/icons/icon-512.png',
+    '/data/outcome.json' // Cache the prayer prompts
 ];
 
 self.addEventListener('install', event => {

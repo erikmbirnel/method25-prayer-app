@@ -16,8 +16,8 @@
     <h1>A Method for Prayer by Matthew Henry</h1>
 
     <div id="auth-container">
-        <button id="login-button" class="action-button">Login with Google</button>
-        <span id="user-status" style="margin-left: 10px;">Not logged in</span>
+        <button id="login-button" class="auth-button">Login with Google</button>
+        <span id="user-status" style="margin-left: 10px;">Not logged in. <em id="login-prompt-message">(Sign-in required to save prayers)</em></span>
         <button id="logout-button" class="action-button" style="display:none; margin-left: 10px;">Logout</button>
     </div>
 
@@ -26,13 +26,15 @@
     </div>
 
     <div id="prayer-actions-container" style="margin-top: 20px;">
-        <button id="generate-all-button" class="action-button">Generate Full New Prayer</button>
-        <button id="save-prayer-button" class="action-button" style="display:none; margin-left: 10px;">Save Current Prayer</button>
+        <button id="generate-all-button" class="action-button primary-action">Generate Full New Prayer</button>
+        <div id="secondary-actions-container" style="margin-top: 10px; display: flex; justify-content: space-between;">
+            <button id="save-prayer-button" class="action-button save-action" style="display:none; flex-basis: 48%;">Save This Prayer</button>
+            <button id="view-calendar-button" class="action-button view-saved-action" style="display:none; flex-basis: 48%;">View Saved Prayers</button>
+        </div>
     </div>
 
     <div id="saved-prayers-section" style="margin-top: 30px; display:none;">
-        <h2>My Saved Prayers</h2>
-        <button id="view-calendar-button" class="action-button">View Calendar</button>
+        <h2 id="my-saved-prayers-heading">My Saved Prayers</h2>
         <div id="calendar-container" style="margin-top: 15px; display:none;">
             <div id="calendar-header">
                 <button id="prev-month-button">&lt; Prev</button>
@@ -44,6 +46,10 @@
             </div>
         </div>
         <div id="recalled-prayer-container" style="margin-top: 15px; display:none;">
+            <div id="recalled-prayer-list-container" style="margin-bottom:15px;">
+                <h4>Prayers for <span id="recalled-prayer-list-date"></span>:</h4>
+                <ul id="recalled-prayer-list"></ul>
+            </div>
             <h3>Prayer for <span id="recalled-prayer-date"></span></h3>
             <div id="recalled-prayer-content"></div>
             <button id="close-recalled-prayer-button">Close Prayer</button>

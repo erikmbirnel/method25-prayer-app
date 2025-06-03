@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let allPromptsData = [];
     let groupedByCategory = {};
+    let prayerHistory = {}; // For the "Back" button feature
     const prayerContainer = document.getElementById('prayer-container');
     const generateAllButton = document.getElementById('generate-all-button');
 
@@ -32,10 +33,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const prevMonthButton = document.getElementById('prev-month-button');
     const nextMonthButton = document.getElementById('next-month-button');
     const recalledPrayerContainer = document.getElementById('recalled-prayer-container');
+    const recalledPrayerListContainer = document.getElementById('recalled-prayer-list-container');
+    const recalledPrayerList = document.getElementById('recalled-prayer-list');
+    const recalledPrayerListDate = document.getElementById('recalled-prayer-list-date');
     const recalledPrayerDate = document.getElementById('recalled-prayer-date');
     const recalledPrayerContent = document.getElementById('recalled-prayer-content');
     const closeRecalledPrayerButton = document.getElementById('close-recalled-prayer-button');
-
+    const mySavedPrayersHeading = document.getElementById('my-saved-prayers-heading');
+    const loginPromptMessage = document.getElementById('login-prompt-message');
     let currentCalendarDate = new Date(); // For calendar navigation
 
     // --- Core Logic (inspired by PrayerAssembler class) ---
@@ -52,6 +57,10 @@ document.addEventListener('DOMContentLoaded', () => {
             // Store the prompt directly, assuming structure from outcome.json
             // { prompt: "text...", scripture_references: [...] }
             groupedByCategory[category].push(item);
+        }
+        // Initialize prayer history
+        for (const categoryName of PRAYER_CATEGORY_ORDER) {
+            prayerHistory[categoryName] = [];
         }
     }
 
@@ -101,12 +110,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const rerandomizeButton = document.createElement('button');
         rerandomizeButton.textContent = 'Refresh';
-        rerandomizeButton.className = 'rerandomize-button';
+        rerandomizeButton.className = 'rerandomize-button action-button'; // Added action-button for consistency
         rerandomizeButton.addEventListener('click', () => reRandomizeCategory(categoryName));
+
+        const backButton = document.createElement('button');
+        backButton.textContent = 'Back';
+        backButton.className = 'back-button action-button';
+        backButton.disabled = true; // Initially disabled
+        backButton.addEventListener('click', () => goBackCategory(categoryName));
+
+        const buttonContainer = document.createElement('div');
+        buttonContainer.appendChild(rerandomizeButton);
+        buttonContainer.appendChild(backButton);
 
         categoryDiv.appendChild(title);
         categoryDiv.appendChild(contentP);
-        categoryDiv.appendChild(rerandomizeButton);
+        categoryDiv.appendChild(buttonContainer);
         prayerContainer.appendChild(categoryDiv);
     }
 
@@ -118,6 +137,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if (contentP) {
                 contentP.textContent = segmentText;
             }
+            // Update back button state
+            const backButton = categoryDiv.querySelector('.back-button');
+            if (backButton) {
+                backButton.disabled = !prayerHistory[categoryName] || prayerHistory[categoryName].length === 0;
+            }
         }
     }
 
@@ -128,16 +152,52 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         for (const categoryName of PRAYER_CATEGORY_ORDER) {
+            // Save current prompt to history before getting a new one
+            const currentCategoryDiv = document.getElementById(`category-${categoryName.replace(/[\s/]+/g, '-')}`);
+            if (currentCategoryDiv) {
+                const currentContentP = currentCategoryDiv.querySelector('.prayer-text');
+                if (currentContentP && currentContentP.textContent !== 'Loading...' && !currentContentP.textContent.startsWith('(No prompt available')) {
+                     // Find the promptData that matches currentContentP.textContent
+                    const currentPromptData = (groupedByCategory[categoryName] || []).find(p => formatSegment(categoryName, p) === currentContentP.textContent);
+                    if (currentPromptData) recordHistory(categoryName, currentPromptData);
+                }
+            }
+
             const promptData = getRandomPromptForCategory(categoryName);
             const segmentText = formatSegment(categoryName, promptData);
             updateCategoryDisplay(categoryName, segmentText);
         }
     }
 
+    function recordHistory(categoryName, promptData) {
+        if (!prayerHistory[categoryName]) prayerHistory[categoryName] = [];
+        prayerHistory[categoryName].unshift(promptData); // Add to the beginning
+        if (prayerHistory[categoryName].length > 3) { // Keep only last 3
+            prayerHistory[categoryName].pop();
+        }
+    }
+
     function reRandomizeCategory(categoryName) {
+        // Save current prompt to history before getting a new one
+        const categoryDiv = document.getElementById(`category-${categoryName.replace(/[\s/]+/g, '-')}`);
+        if (categoryDiv) {
+            const contentP = categoryDiv.querySelector('.prayer-text');
+            if (contentP && contentP.textContent !== 'Loading...' && !contentP.textContent.startsWith('(No prompt available')) {
+                const currentPromptData = (groupedByCategory[categoryName] || []).find(p => formatSegment(categoryName, p) === contentP.textContent);
+                if (currentPromptData) recordHistory(categoryName, currentPromptData);
+            }
+        }
+
         const promptData = getRandomPromptForCategory(categoryName);
         const segmentText = formatSegment(categoryName, promptData);
         updateCategoryDisplay(categoryName, segmentText);
+    }
+    function goBackCategory(categoryName) {
+        if (prayerHistory[categoryName] && prayerHistory[categoryName].length > 0) {
+            const previousPromptData = prayerHistory[categoryName].shift(); // Get and remove the most recent history item
+            const segmentText = formatSegment(categoryName, previousPromptData);
+            updateCategoryDisplay(categoryName, segmentText);
+        }
     }
 
     // --- Firebase Authentication ---
@@ -169,19 +229,25 @@ document.addEventListener('DOMContentLoaded', () => {
         if (user) {
             userStatus.textContent = `Logged in as ${user.displayName || user.email}`;
             loginButton.style.display = 'none';
+            loginPromptMessage.style.display = 'none';
             logoutButton.style.display = 'inline-block';
-            savePrayerButton.style.display = 'inline-block';
-            savedPrayersSection.style.display = 'block';
-            // Optionally, load calendar or saved prayers info here
-            renderCalendar();
+            savePrayerButton.style.display = 'inline-block'; // Or 'flex' if parent is flex
+            viewCalendarButton.style.display = 'inline-block'; // Or 'flex'
+            mySavedPrayersHeading.style.display = 'block';
+            // renderCalendar(); // Called when 'View Calendar' is clicked
         } else {
-            userStatus.textContent = 'Not logged in';
+            userStatus.textContent = 'Not logged in.';
             loginButton.style.display = 'inline-block';
+            loginPromptMessage.style.display = 'inline'; // Show prompt
             logoutButton.style.display = 'none';
             savePrayerButton.style.display = 'none';
-            savedPrayersSection.style.display = 'none';
+            viewCalendarButton.style.display = 'none';
+            savedPrayersSection.style.display = 'none'; // Hide the whole section
             calendarContainer.style.display = 'none';
             recalledPrayerContainer.style.display = 'none';
+            recalledPrayerListContainer.style.display = 'none';
+            calendarGrid.innerHTML = ''; // Clear calendar grid
+            currentMonthYearDisplay.textContent = 'Month Year'; // Reset calendar header
         }
     });
 
@@ -199,10 +265,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const categoryDiv = document.getElementById(categoryId);
             if (categoryDiv) {
                 const contentP = categoryDiv.querySelector('.prayer-text');
-                if (contentP && contentP.textContent !== 'Loading...' && contentP.textContent !== `(No prompt available for ${categoryName})`) {
+                if (contentP && contentP.textContent !== 'Loading...' && !contentP.textContent.startsWith('(No prompt available for')) {
                     prayerSegments.push({
                         category: categoryName,
-                        textWithScripture: contentP.textContent
+                        textWithScripture: contentP.textContent // This is the formatted string
                     });
                     prayerIsEmpty = false;
                 }
@@ -217,10 +283,12 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             await db.collection('users').doc(currentUser.uid).collection('savedPrayers').add({
                 segments: prayerSegments,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                createdAt: firebase.firestore.FieldValue.serverTimestamp() // Use server timestamp
             });
             alert("Prayer saved!");
-            renderCalendar(); // Re-render calendar to show new prayer mark
+            if (calendarContainer.style.display === 'block') { // If calendar is visible, refresh it
+                renderCalendar();
+            }
         } catch (error) {
             console.error("Error saving prayer: ", error);
             alert("Failed to save prayer. See console for details.");
@@ -266,14 +334,41 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function displayRecalledPrayer(prayerDoc) {
-        recalledPrayerDate.textContent = prayerDoc.createdAt.toDate().toLocaleDateString();
+    function displaySingleRecalledPrayer(prayerDoc) {
+        recalledPrayerDate.textContent = prayerDoc.createdAt.toDate().toLocaleDateString() + " " + prayerDoc.createdAt.toDate().toLocaleTimeString();
         recalledPrayerContent.innerHTML = prayerDoc.segments.map(segment => 
             `<h3>${segment.category}:</h3><p>${segment.textWithScripture}</p>`
         ).join('');
         recalledPrayerContainer.style.display = 'block';
+        recalledPrayerListContainer.style.display = 'none'; // Hide list when single prayer is shown
         calendarContainer.style.display = 'none'; // Hide calendar when showing prayer
     }
+
+    function displayRecalledPrayerList(prayers, date) {
+        recalledPrayerList.innerHTML = ''; // Clear previous list
+        recalledPrayerListDate.textContent = date.toLocaleDateString();
+
+        if (prayers.length === 0) {
+            recalledPrayerList.innerHTML = '<li>No prayers saved for this day.</li>';
+        } else if (prayers.length === 1) {
+            displaySingleRecalledPrayer(prayers[0]); // If only one, display it directly
+            return;
+        } else {
+            prayers.forEach(prayerDoc => {
+                const listItem = document.createElement('li');
+                const prayerTime = prayerDoc.createdAt.toDate().toLocaleTimeString();
+                // Create a summary or use the first segment's category
+                const summary = prayerDoc.segments.length > 0 ? prayerDoc.segments[0].category : "Prayer";
+                listItem.textContent = `${summary} at ${prayerTime}`;
+                listItem.addEventListener('click', () => displaySingleRecalledPrayer(prayerDoc));
+                recalledPrayerList.appendChild(listItem);
+            });
+        }
+        recalledPrayerListContainer.style.display = 'block';
+        recalledPrayerContainer.style.display = 'none'; // Hide single prayer view initially
+        calendarContainer.style.display = 'none'; // Hide calendar
+    }
+
 
     // --- Initialization ---
 
@@ -320,8 +415,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (viewCalendarButton) {
             viewCalendarButton.addEventListener('click', () => {
+                savedPrayersSection.style.display = 'block'; // Ensure parent section is visible
                 calendarContainer.style.display = calendarContainer.style.display === 'none' ? 'block' : 'none';
                 recalledPrayerContainer.style.display = 'none'; // Hide recalled prayer if open
+                recalledPrayerListContainer.style.display = 'none'; // Hide list
                 if (calendarContainer.style.display === 'block') {
                     renderCalendar();
                 }
@@ -342,8 +439,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (closeRecalledPrayerButton) {
             closeRecalledPrayerButton.addEventListener('click', () => {
                 recalledPrayerContainer.style.display = 'none';
+                recalledPrayerListContainer.style.display = 'none';
                 // Optionally show calendar again if it was the previous view
-                // viewCalendarButton.click(); // Or manage state more explicitly
+                if (savedPrayersSection.style.display === 'block') {
+                    calendarContainer.style.display = 'block';
+                }
             });
         }
     }
@@ -376,11 +476,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (savedDates.includes(day)) {
                 dayCell.classList.add('has-prayer');
                 dayCell.addEventListener('click', async () => {
-                    const prayersOnThisDay = await getPrayersForDay(new Date(year, month, day));
-                    if (prayersOnThisDay.length > 0) {
-                        displayRecalledPrayer(prayersOnThisDay[0]); // Display the first prayer for simplicity
-                        // TODO: Handle multiple prayers on the same day (e.g., show a list)
-                    }
+                    const clickedDate = new Date(year, month, day);
+                    const prayersOnThisDay = await getPrayersForDay(clickedDate);
+                    displayRecalledPrayerList(prayersOnThisDay, clickedDate);
                 });
             }
             calendarGrid.appendChild(dayCell);
@@ -389,28 +487,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     initializeApp();
 
-    // Service Worker Registration (optional, but good for PWAs)
-    // if ('serviceWorker' in navigator) {
-    //   navigator.serviceWorker.register('/service-worker.js') // Ensure service-worker.js is in the root
-    //     .then(registration => {
-    //       console.log('Service Worker registered with scope:', registration.scope);
-    //     })
-    //     .catch(error => {
-    //       console.error('Service Worker registration failed:', error);
-    //     });
-    // }
+    // Service Worker Registration
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/service-worker.js')
+        .then(registration => {
+          console.log('Service Worker registered with scope:', registration.scope);
+        })
+        .catch(error => {
+          console.error('Service Worker registration failed:', error);
+        });
+    }
 });
-//the following are the rules in the Firestore Database as of June 03, 2025. I include for reference://rules_version = '2';
-//service cloud.firestore {
-  //match /databases/{database}/documents {
-    // Users can only read and write their own saved prayers
-    //match /users/{userId}/savedPrayers/{prayerId} {
-      //allow read, write: if request.auth != null && request.auth.uid == userId;
-    //}
-    // You might add rules for a user profile document later if needed
-    // match /users/{userId} {
-    //   allow read, update: if request.auth != null && request.auth.uid == userId;
-    //   allow create: if request.auth != null; // Or more specific rules
-    // }
-  //}
-//}
