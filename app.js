@@ -19,7 +19,20 @@ document.addEventListener('DOMContentLoaded', () => {
     // Firebase Auth and Firestore instances
     const auth = firebase.auth();
     const db = firebase.firestore();
-    let analytics = null; // Declare analytics variable
+    let analytics = null; 
+
+    // Initialize Firebase Analytics
+    // This assumes firebase.initializeApp has already run from index.html
+    try {
+        if (firebase && typeof firebase.analytics === 'function') {
+            analytics = firebase.analytics();
+            console.log("Firebase Analytics initialized.");
+        } else {
+            console.error("Firebase or Firebase Analytics SDK not available for initialization in app.js.");
+        }
+    } catch (e) {
+        console.error("Error initializing Firebase Analytics:", e);
+    }
     let currentUser = null;
 
     // UI Elements for new features

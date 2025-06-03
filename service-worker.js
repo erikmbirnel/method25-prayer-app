@@ -1,4 +1,4 @@
-const CACHE_NAME = 'prayer-app-cache-v1';
+const CACHE_NAME = 'prayer-app-cache-v2'; // <-- Increment this version
 const urlsToCache = [
     '/',
     '/index.html',
