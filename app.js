@@ -310,7 +310,8 @@ document.addEventListener('DOMContentLoaded', () => {
         lockReflectionButton.className = 'lock-reflection-button action-button'; // Use action-button for base styling, renamed class
         lockReflectionButton.addEventListener('click', () => handleLockReflectionClick(categoryName));
 
-        reflectionAreaContainer.appendChild(lockReflectionButton); // Add the lock button first
+        reflectionAreaContainer.appendChild(reflectionTextarea);   // Add the textarea first
+        reflectionAreaContainer.appendChild(lockReflectionButton); // Add the lock button after the textarea
 
         categoryDiv.appendChild(title);
         categoryDiv.appendChild(contentP);

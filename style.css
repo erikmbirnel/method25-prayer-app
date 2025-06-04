@@ -224,7 +224,7 @@ h1 {
     margin-bottom: 10px;
 }
 .reflection-textarea {
-    width: 98%; /* Take most of the width */
+    width: 100%; /* Take full width of its container */
     min-height: 80px;
     margin-top: 10px;
     margin-bottom: 10px;
