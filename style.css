@@ -108,7 +108,10 @@ h1 {
 
 #save-prayer-button.save-action {
     background-color: #2ecc71; /* Green, same as Generate Full New Prayer */
-    font-size: 1.1em;
+    /* Match the generate-all-button for size */
+    padding: 24px;
+    font-size: 1.2em;
+    box-sizing: border-box; /* Ensure padding doesn't expand width beyond 100% */
 }
 
 #view-calendar-button.view-saved-action {
@@ -215,11 +218,11 @@ h1 {
 }
 
 .reflection-area { /* Container for textarea and its save button */
+    display: flex; /* Use flexbox */
+    flex-direction: column; /* Stack children vertically */
     margin-top: 10px;
     margin-bottom: 10px;
-    position: relative; /* For positioning the save button if needed */
 }
-
 .reflection-textarea {
     width: 98%; /* Take most of the width */
     min-height: 80px;
@@ -229,7 +232,7 @@ h1 {
     border: 1px solid #ccc;
     border-radius: 4px;
     font-family: sans-serif;
-    font-size: 0.95em;
+    font-size: 1em; /* Adjusted slightly for consistency */
     box-sizing: border-box; /* Include padding and border in the element's total width and height */
 }
 
@@ -242,11 +245,10 @@ h1 {
     /* The existing padding will still apply, giving some space around the text */
 }
 
-.save-reflection-button {
-    display: block; /* Or inline-block and float right */
-    margin-top: 5px;
-    margin-left: auto; /* Pushes to the right if container is flex or if it's block */
-    padding: 5px 10px;
+.lock-reflection-button { /* Renamed from .save-reflection-button */
+    align-self: flex-end; /* Align button to the right within the flex container */
+    margin-bottom: 5px; /* Add space below the button */
+    padding: 8px 15px; /* Adjust padding for better click area */
     font-size: 0.85em;
 }
 

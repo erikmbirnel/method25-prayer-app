@@ -310,8 +310,7 @@ document.addEventListener('DOMContentLoaded', () => {
         lockReflectionButton.className = 'lock-reflection-button action-button'; // Use action-button for base styling, renamed class
         lockReflectionButton.addEventListener('click', () => handleLockReflectionClick(categoryName));
 
-        reflectionAreaContainer.appendChild(reflectionTextarea);
-        reflectionAreaContainer.appendChild(lockReflectionButton); // Add the lock button
+        reflectionAreaContainer.appendChild(lockReflectionButton); // Add the lock button first
 
         categoryDiv.appendChild(title);
         categoryDiv.appendChild(contentP);
@@ -393,8 +392,6 @@ document.addEventListener('DOMContentLoaded', () => {
     function handleLockReflectionClick(categoryName) {
         const categoryId = `category-${categoryName.replace(/[\s/]+/g, '-')}`;
         const categoryDiv = document.getElementById(categoryId);
-        if (!categoryDiv) return;
-
         const reflectionTextarea = categoryDiv.querySelector('.reflection-textarea');
         const lockReflectionButton = categoryDiv.querySelector('.lock-reflection-button');
 
@@ -480,7 +477,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (user) {
             userStatus.textContent = `Logged in as ${user.displayName || user.email}`;
             loginButton.style.display = 'none';
-            if (loginPromptMessage) loginPromptMessage.style.display = 'none'; // Hide prompt when logged in
+            if (loginPromptMessage) {
+                loginPromptMessage.textContent = ''; // Clear the prompt message text
+                loginPromptMessage.style.display = 'none'; // Hide prompt when logged in
+            }
             logoutButton.style.display = 'inline-block';
             savePrayerButton.style.display = 'block'; // Make save button block to take full width
             mySavedPrayersHeading.style.display = 'block';
@@ -490,7 +490,7 @@ document.addEventListener('DOMContentLoaded', () => {
             userStatus.textContent = 'Not logged in.';
             loginButton.style.display = 'inline-block';
             if (loginPromptMessage) {
-                loginPromptMessage.textContent = "Login with your Google Account to save prayers and customize your experience";
+                loginPromptMessage.textContent = "Login with your Google account to save prayers and customize your experience";
                 loginPromptMessage.style.display = 'inline'; // Show prompt when not logged in
             }
             logoutButton.style.display = 'none';
