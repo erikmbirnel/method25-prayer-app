@@ -66,22 +66,39 @@ h1 {
 }
 .back-button {
     background-color: #7f8c8d; /* Grey for back button */
-    padding: 8px 12px;
-    font-size: 0.9em;
+    padding: 16px 25px; /* Match rerandomize-button padding */
+    font-size: 1.1em;  /* Match rerandomize-button font-size */
     margin-left: 10px; /* Space it from the refresh button */
 }
 .reflection-button {
     background-color: #f1c40f; /* Similar yellow to save-action */
-    padding: 8px 12px;
-    font-size: 0.9em;
+    padding: 16px 25px; /* Match rerandomize-button padding */
+    font-size: 1.1em;  /* Match rerandomize-button font-size */
     margin-left: 10px; /* Space it from the back button */
+}
+
+/* Container for Refresh, Back, Reflect buttons */
+.category-button-container {
+    display: flex;
+    gap: 8px; /* Space between buttons */
+    width: 100%;
+    margin-top: 10px; /* Space above this button group */
+}
+
+.category-button-container .action-button { /* Target buttons within this container */
+    flex: 1 1 0; /* Grow and shrink equally, base size 0 */
+    min-width: 0; /* Allow shrinking below content size */
+    margin: 0; /* Override general .action-button margin to let gap control spacing */
+    white-space: nowrap; /* Prevent text wrapping inside button */
+    overflow: hidden; /* Hide overflowing text */
+    text-overflow: ellipsis; /* Show "..." for hidden text */
 }
 
 /* --- Specific Action Buttons --- */
 #generate-all-button.primary-action {
     display: block;
     width: 100%;
-    background-color: #2ecc71; /* Green */
+    background-color: #3498db; /* Blue, same as rerandomize-button */
     padding: 24px; /* Increased padding */
     font-size: 1.2em;  /* Increased font-size */
     margin-top: 10px;
@@ -90,7 +107,7 @@ h1 {
 }
 
 #save-prayer-button.save-action {
-    background-color: #f1c40f; /* Pleasant Yellow */
+    background-color: #2ecc71; /* Green, same as Generate Full New Prayer */
     font-size: 1.1em;
 }
 
@@ -111,11 +128,11 @@ h1 {
 }
 
 #generate-all-button.primary-action:hover:not(:disabled) {
-    background-color: #27ae60; /* Darker Green */
+    background-color: #2980b9; /* Darker Blue, same as rerandomize-button hover */
 }
 
 #save-prayer-button.save-action:hover:not(:disabled) {
-    background-color: #d4ac0d; /* Darker Yellow */
+    background-color: #27ae60; /* Darker Green, same as Generate Full New Prayer hover */
 }
 
 #view-calendar-button.view-saved-action:hover:not(:disabled) {

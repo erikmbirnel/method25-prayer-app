@@ -39,7 +39,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const loginButton = document.getElementById('login-button');
     const logoutButton = document.getElementById('logout-button');
     const userStatus = document.getElementById('user-status');
-    const savePrayerButton = document.getElementById('save-prayer-button');
     const savedPrayersSection = document.getElementById('saved-prayers-section');
     const viewCalendarButton = document.getElementById('view-calendar-button');
     const calendarContainer = document.getElementById('calendar-container');
@@ -54,6 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const recalledPrayerDate = document.getElementById('recalled-prayer-date');
     const recalledPrayerContent = document.getElementById('recalled-prayer-content');
     const closeRecalledPrayerButton = document.getElementById('close-recalled-prayer-button');
+    const savePrayerButton = document.getElementById('save-prayer-button'); // Moved save button reference here
     const mySavedPrayersHeading = document.getElementById('my-saved-prayers-heading');
     const loginPromptMessage = document.getElementById('login-prompt-message');
     let currentCalendarDate = new Date(); // For calendar navigation
@@ -291,6 +291,7 @@ document.addEventListener('DOMContentLoaded', () => {
         reflectionButton.addEventListener('click', () => toggleReflectionArea(categoryName));
 
         const buttonContainer = document.createElement('div');
+        buttonContainer.className = 'category-button-container'; // Added class for styling
         buttonContainer.appendChild(rerandomizeButton);
         buttonContainer.appendChild(backButton);
         buttonContainer.appendChild(reflectionButton);
@@ -304,17 +305,17 @@ document.addEventListener('DOMContentLoaded', () => {
         reflectionTextarea.placeholder = 'Type your reflections or custom prayer here...';
         reflectionTextarea.setAttribute('aria-label', `Reflection for ${categoryName}`);
 
-        const saveReflectionButton = document.createElement('button');
-        saveReflectionButton.textContent = 'Lock Reflection';
-        saveReflectionButton.className = 'save-reflection-button action-button'; // Use action-button for base styling
-        saveReflectionButton.addEventListener('click', () => handleLockReflectionClick(categoryName));
+        const lockReflectionButton = document.createElement('button'); // Renamed for clarity
+        lockReflectionButton.textContent = 'Lock Reflection';
+        lockReflectionButton.className = 'lock-reflection-button action-button'; // Use action-button for base styling, renamed class
+        lockReflectionButton.addEventListener('click', () => handleLockReflectionClick(categoryName));
 
         reflectionAreaContainer.appendChild(reflectionTextarea);
-        reflectionAreaContainer.appendChild(saveReflectionButton);
+        reflectionAreaContainer.appendChild(lockReflectionButton); // Add the lock button
 
         categoryDiv.appendChild(title);
         categoryDiv.appendChild(contentP);
-        categoryDiv.appendChild(reflectionAreaContainer); // Add the container for textarea and its lock button
+        categoryDiv.appendChild(reflectionAreaContainer);
         categoryDiv.appendChild(buttonContainer);
         prayerContainer.appendChild(categoryDiv);
     }
@@ -339,14 +340,15 @@ document.addEventListener('DOMContentLoaded', () => {
             if (reflectionAreaContainer) {
                 reflectionAreaContainer.style.display = 'none';
                 const reflectionTextarea = reflectionAreaContainer.querySelector('.reflection-textarea');
-                const saveReflectionButton = reflectionAreaContainer.querySelector('.save-reflection-button');
+                const lockReflectionButton = reflectionAreaContainer.querySelector('.lock-reflection-button');
                 if (reflectionTextarea) {
                     reflectionTextarea.value = '';
                     reflectionTextarea.readOnly = false;
                     reflectionTextarea.classList.remove('frozen');
                 }
-                if (saveReflectionButton) {
-                    saveReflectionButton.textContent = 'Lock Reflection';
+                if (lockReflectionButton) {
+                    lockReflectionButton.textContent = 'Lock Reflection';
+                    lockReflectionButton.style.display = 'block'; // Ensure it's ready to be shown
                 }
             }
         }
@@ -355,12 +357,35 @@ document.addEventListener('DOMContentLoaded', () => {
     function toggleReflectionArea(categoryName) {
         const categoryId = `category-${categoryName.replace(/[\s/]+/g, '-')}`;
         const categoryDiv = document.getElementById(categoryId);
+        if (!categoryDiv) return;
+
         const reflectionAreaContainer = categoryDiv.querySelector('.reflection-area');
-        reflectionAreaContainer.style.display = reflectionAreaContainer.style.display === 'none' ? 'block' : 'none';
-        if (reflectionAreaContainer.style.display === 'block') {
-            const reflectionTextarea = reflectionAreaContainer.querySelector('.reflection-textarea');
-            if (!reflectionTextarea.readOnly) { // Only focus if not already locked
+        const reflectionTextarea = categoryDiv.querySelector('.reflection-textarea');
+        const lockReflectionButton = categoryDiv.querySelector('.lock-reflection-button');
+
+        if (!reflectionAreaContainer || !reflectionTextarea || !lockReflectionButton) return;
+
+        if (reflectionAreaContainer.style.display === 'none') {
+            // Area is hidden: show it, make editable, show lock button
+            reflectionAreaContainer.style.display = 'block';
+            reflectionTextarea.readOnly = false;
+            reflectionTextarea.classList.remove('frozen');
+            lockReflectionButton.textContent = 'Lock Reflection';
+            lockReflectionButton.style.display = 'block'; // Or 'inline-block' if preferred
+            reflectionTextarea.focus();
+        } else {
+            // Area is visible
+            if (reflectionTextarea.readOnly) {
+                // Area is visible and locked: make editable, show lock button
+                reflectionTextarea.readOnly = false;
+                reflectionTextarea.classList.remove('frozen');
+                lockReflectionButton.textContent = 'Lock Reflection';
+                lockReflectionButton.style.display = 'block'; // Or 'inline-block'
                 reflectionTextarea.focus();
+            } else {
+                // Area is visible and editable: hide it
+                reflectionAreaContainer.style.display = 'none';
+                // lockReflectionButton will be hidden as part of the container
             }
         }
     }
@@ -368,12 +393,16 @@ document.addEventListener('DOMContentLoaded', () => {
     function handleLockReflectionClick(categoryName) {
         const categoryId = `category-${categoryName.replace(/[\s/]+/g, '-')}`;
         const categoryDiv = document.getElementById(categoryId);
-        const reflectionTextarea = categoryDiv.querySelector('.reflection-textarea');
-        const lockButton = categoryDiv.querySelector('.save-reflection-button');
+        if (!categoryDiv) return;
 
-        reflectionTextarea.readOnly = !reflectionTextarea.readOnly; // Toggle readOnly state
-        reflectionTextarea.classList.toggle('frozen');
-        lockButton.textContent = reflectionTextarea.readOnly ? 'Edit Reflection' : 'Lock Reflection';
+        const reflectionTextarea = categoryDiv.querySelector('.reflection-textarea');
+        const lockReflectionButton = categoryDiv.querySelector('.lock-reflection-button');
+
+        if (!reflectionTextarea || !lockReflectionButton) return;
+
+        reflectionTextarea.readOnly = true;
+        reflectionTextarea.classList.add('frozen');
+        lockReflectionButton.style.display = 'none'; // Hide the lock button itself
     }
 
     function displayFullPrayer() {
@@ -451,20 +480,22 @@ document.addEventListener('DOMContentLoaded', () => {
         if (user) {
             userStatus.textContent = `Logged in as ${user.displayName || user.email}`;
             loginButton.style.display = 'none';
-            loginPromptMessage.style.display = 'none';
+            if (loginPromptMessage) loginPromptMessage.style.display = 'none'; // Hide prompt when logged in
             logoutButton.style.display = 'inline-block';
-            savePrayerButton.style.display = 'inline-block'; // Or 'flex' if parent is flex
-            viewCalendarButton.style.display = 'inline-block'; // Or 'flex'
+            savePrayerButton.style.display = 'block'; // Make save button block to take full width
             mySavedPrayersHeading.style.display = 'block';
-            // renderCalendar(); // Called when 'View Calendar' is clicked
+            savedPrayersSection.style.display = 'block'; // Show the whole section
+            calendarContainer.style.display = 'block'; // Show calendar by default
         } else {
             userStatus.textContent = 'Not logged in.';
             loginButton.style.display = 'inline-block';
-            loginPromptMessage.style.display = 'inline'; // Show prompt
+            if (loginPromptMessage) {
+                loginPromptMessage.textContent = "Login with your Google Account to save prayers and customize your experience";
+                loginPromptMessage.style.display = 'inline'; // Show prompt when not logged in
+            }
             logoutButton.style.display = 'none';
             savePrayerButton.style.display = 'none';
             viewCalendarButton.style.display = 'none';
-            savedPrayersSection.style.display = 'none'; // Hide the whole section
             calendarContainer.style.display = 'none';
             recalledPrayerContainer.style.display = 'none';
             recalledPrayerListContainer.style.display = 'none';
@@ -492,7 +523,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (reflectionAreaContainer && reflectionAreaContainer.style.display !== 'none') {
                     const reflectionTextarea = reflectionAreaContainer.querySelector('.reflection-textarea');
                     if (reflectionTextarea && reflectionTextarea.readOnly && reflectionTextarea.value.trim() !== '') {
-                        const plainTextReflection = reflectionTextarea.value.trim();
+                        const plainTextReflection = reflectionTextarea.value; // Preserve whitespace
                         const encryptedReflection = await encryptText(plainTextReflection);
                         if (encryptedReflection) {
                             reflectionPayload = encryptedReflection;
@@ -581,10 +612,10 @@ document.addEventListener('DOMContentLoaded', () => {
             let segmentHTML = `<h3>${segment.category}:</h3><p>${segment.textWithScripture}</p>`;
             if (segment.reflection && typeof segment.reflection === 'object' && segment.reflection.ciphertext && segment.reflection.iv) {
                 const decryptedReflection = await decryptText(segment.reflection.ciphertext, segment.reflection.iv);
-                segmentHTML += `<div class="saved-reflection"><p><em>Your Reflection:</em></p><p>${decryptedReflection.replace(/\n/g, '<br>')}</p></div>`;
+                segmentHTML += `<div class="saved-reflection"><p><em>Your Reflection:</em></p><p>${escapeHTML(decryptedReflection).replace(/\n/g, '<br>')}</p></div>`;
             } else if (segment.reflection && typeof segment.reflection === 'string' && segment.reflection.trim() !== '') {
                 // Handle legacy unencrypted reflections, if any (though new ones won't be strings)
-                segmentHTML += `<div class="saved-reflection"><p><em>Your Reflection (unencrypted):</em></p><p>${segment.reflection.replace(/\n/g, '<br>')}</p></div>`;
+                segmentHTML += `<div class="saved-reflection"><p><em>Your Reflection (unencrypted):</em></p><p>${escapeHTML(segment.reflection).replace(/\n/g, '<br>')}</p></div>`;
             }
             return segmentHTML;
         });
@@ -734,17 +765,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (savePrayerButton) {
             savePrayerButton.addEventListener('click', saveCurrentPrayer);
         }
-        if (viewCalendarButton) {
-            viewCalendarButton.addEventListener('click', () => {
-                savedPrayersSection.style.display = 'block'; // Ensure parent section is visible
-                calendarContainer.style.display = calendarContainer.style.display === 'none' ? 'block' : 'none';
-                recalledPrayerContainer.style.display = 'none'; // Hide recalled prayer if open
-                recalledPrayerListContainer.style.display = 'none'; // Hide list
-                if (calendarContainer.style.display === 'block') {
-                    renderCalendar();
-                }
-            });
-        }
+        // Removed viewCalendarButton listener as calendar is always visible when logged in
+
         if (prevMonthButton) {
             prevMonthButton.addEventListener('click', () => {
                 currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
@@ -760,11 +782,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (closeRecalledPrayerButton) {
             closeRecalledPrayerButton.addEventListener('click', () => {
                 recalledPrayerContainer.style.display = 'none';
-                recalledPrayerListContainer.style.display = 'none';
-                // Optionally show calendar again if it was the previous view
-                if (savedPrayersSection.style.display === 'block') {
-                    calendarContainer.style.display = 'block';
-                }
+                recalledPrayerListContainer.style.display = 'none'; // Hide list view
+                calendarContainer.style.display = 'block'; // Always show calendar after closing prayer view
             });
         }
 
@@ -793,7 +812,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Calendar UI ---
     async function renderCalendar() {
-        if (!currentUser || calendarContainer.style.display === 'none') return;
+        if (!currentUser || !calendarGrid || !currentMonthYearDisplay) return; // Check for elements
 
         calendarGrid.innerHTML = ''; // Clear previous month
         const year = currentCalendarDate.getFullYear();
@@ -827,6 +846,11 @@ document.addEventListener('DOMContentLoaded', () => {
             calendarGrid.appendChild(dayCell);
         }
     }
+
+    // Initial render of the calendar if user is already logged in on page load
+    auth.onAuthStateChanged(user => {
+        if (user) renderCalendar();
+    });
 
     initializeApp();
 
