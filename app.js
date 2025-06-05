@@ -707,20 +707,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 const verseHeaders = tempDiv.querySelectorAll('h2');
                 verseHeaders.forEach(header => header.remove());
 
-                // Remove all p.copyright elements (intermediate ESV attributions)
+                // Remove all p.copyright elements except the last one
                 const copyrights = tempDiv.querySelectorAll('p.copyright');
-                copyrights.forEach(p => p.remove());
+                if (copyrights.length > 1) {
+                    for (let i = 0; i < copyrights.length - 1; i++) {
+                        copyrights[i].remove();
+                    }
+                }
+                // If copyrights.length is 0 or 1, no intermediate copyrights are removed,
+                // and the single one (if present) or none will remain.
 
                 // Remove ESV-specific chapter number spans if they exist
                 const chapterNumbers = tempDiv.querySelectorAll('span.chapter-num');
                 chapterNumbers.forEach(span => span.remove());
 
-                let cleanedHtml = tempDiv.innerHTML.trim(); // Get the cleaned HTML
-
-                // Add a single (ESV) attribution at the end
-                cleanedHtml += '<p class="esv-attribution">(ESV)</p>'; 
-                
-                scriptureModalBody.innerHTML = cleanedHtml;
+                scriptureModalBody.innerHTML = tempDiv.innerHTML.trim(); // Set the cleaned HTML
             } else {
                 scriptureModalBody.innerHTML = '<p>Scripture passage not found or an error occurred.</p>';
             }
