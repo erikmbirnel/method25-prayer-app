@@ -332,3 +332,11 @@ h1 {
     font-size: 1.2em;
     margin-top: 0;
 }
+
+.esv-attribution {
+    font-size: 0.85em;
+    font-style: italic;
+    text-align: right;
+    margin-top: 1em;
+    color: #777;
+}

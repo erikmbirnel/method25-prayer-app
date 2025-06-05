@@ -698,7 +698,29 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (data.passages && data.passages.length > 0) {
                 scriptureModalTitle.textContent = data.canonical || reference; // Use canonical name if available
-                scriptureModalBody.innerHTML = data.passages.join(''); // Join all passage HTML strings
+                
+                let combinedHtml = data.passages.join('');
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = combinedHtml;
+
+                // Remove all intermediate h2 elements (ESV verse reference headers like "Psalm X:Y (Listen)")
+                const verseHeaders = tempDiv.querySelectorAll('h2');
+                verseHeaders.forEach(header => header.remove());
+
+                // Remove all p.copyright elements (intermediate ESV attributions)
+                const copyrights = tempDiv.querySelectorAll('p.copyright');
+                copyrights.forEach(p => p.remove());
+
+                // Remove ESV-specific chapter number spans if they exist
+                const chapterNumbers = tempDiv.querySelectorAll('span.chapter-num');
+                chapterNumbers.forEach(span => span.remove());
+
+                let cleanedHtml = tempDiv.innerHTML.trim(); // Get the cleaned HTML
+
+                // Add a single (ESV) attribution at the end
+                cleanedHtml += '<p class="esv-attribution">(ESV)</p>'; 
+                
+                scriptureModalBody.innerHTML = cleanedHtml;
             } else {
                 scriptureModalBody.innerHTML = '<p>Scripture passage not found or an error occurred.</p>';
             }
