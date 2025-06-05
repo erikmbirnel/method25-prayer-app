@@ -665,7 +665,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         scriptureModalTitle.textContent = `Loading: ${reference}`;
-        scriptureModalBody.innerHTML = '<em>Looking up the passage...</em>';
+        scriptureModalBody.innerHTML = '<em>Looking up passage...</em>';
         showScriptureModal();
 
         // IMPORTANT: Storing API tokens client-side can be a security risk.
@@ -707,15 +707,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 const verseHeaders = tempDiv.querySelectorAll('h2');
                 verseHeaders.forEach(header => header.remove());
 
-                // "Hide" intermediate p.copyright elements by matching their color to the modal background
+                // Target 'a.copyright' for the ESV links.
+                // "Hide" intermediate copyright links by matching their color to the modal background.
                 // The last one will remain visible.
-                const copyrights = tempDiv.querySelectorAll('p.copyright');
+                const copyrightLinks = tempDiv.querySelectorAll('a.copyright');
                 const modalBackgroundColor = '#fefefe'; // From your style.css .modal-content
 
-                copyrights.forEach((p, index) => {
-                    if (index < copyrights.length - 1) { // Apply to all but the last one
-                        p.style.color = modalBackgroundColor;
-                        p.style.userSelect = 'none'; // Make it non-selectable for better "hiding"
+                copyrightLinks.forEach((link, index) => {
+                    // Apply to all but the last one
+                    if (link && index < copyrightLinks.length - 1) { 
+                        link.style.setProperty('color', modalBackgroundColor, 'important');
+                        link.style.setProperty('user-select', 'none', 'important');
+                        link.style.setProperty('text-decoration', 'none', 'important'); // Hide underline
+                    } else if (link) {
+                        // Ensure the last link has default link styling if it was somehow altered
+                        link.style.removeProperty('color');
+                        link.style.removeProperty('user-select');
+                        link.style.removeProperty('text-decoration');
                     }
                 });
 
