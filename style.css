@@ -146,12 +146,14 @@ h1 {
 .auth-button { /* For login button specifically if it needs different base from action-button */
     padding: 8px 15px;
     background-color: #3498db; /* Blue */
+    /* color: white; // Already handled by .action-button if it inherits */
 }
 #auth-container {
     margin-bottom: 20px;
     padding: 10px;
-    background-color: #f0f0f0;
+    /* background-color: #f0f0f0; */ /* Removed to allow button to float right cleanly */
     border-radius: 5px;
+    overflow: auto; /* To contain floated elements */
 }
 
 #login-prompt-message {
@@ -362,4 +364,44 @@ h1 {
 }
 .external-context-link-container a:hover {
     color: #0056b3; /* Darker blue on hover */
+}
+
+/* --- Settings Button --- */
+#settings-button {
+    background-color: #f0f0f0; /* Or match other action buttons if preferred */
+    /* Add other styles as needed, e.g., padding, border */
+    border-radius: 5px;
+    color: #333; /* Text color for a lighter button */
+}
+
+/* --- Settings Modal --- */
+#category-settings-list li {
+    padding: 8px 5px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    align-items: center;
+}
+
+#category-settings-list li:last-child {
+    border-bottom: none;
+}
+
+#category-settings-list input[type="checkbox"] {
+    margin-right: 10px;
+    transform: scale(1.2); /* Make checkbox slightly larger */
+}
+
+#category-settings-list .drag-handle { /* Placeholder for drag functionality */
+    cursor: grab;
+    margin-right: 10px;
+    color: #aaa;
+}
+
+#settings-modal .modal-content {
+    margin: 5% auto; /* Adjust margin for potentially taller content */
+}
+
+.sortable-ghost { /* Class for the SortableJS dragging placeholder */
+    opacity: 0.4;
+    background: #c8ebfb; /* Light blue background for placeholder */
 }

@@ -1,14 +1,17 @@
 document.addEventListener('DOMContentLoaded', () => {
     console.log("PWA App Started");
 
-    const PRAYER_CATEGORY_ORDER = [
+    // Master list of all possible prayer categories
+    const DEFAULT_PRAYER_CATEGORIES = [
         "Adoration",
         "Thanksgiving",
         "Confession",
         "Petition",
         "Intercession"
     ];
-
+    // User's current active and ordered list of categories
+    let userPrayerCategoryOrder = [...DEFAULT_PRAYER_CATEGORIES];
+    const USER_SETTINGS_KEY = 'prayerAppCategorySettings_v1'; // Key for localStorage
     let allPromptsData = [];
     let groupedByCategory = {};
     let prayerHistory = {}; // For the "Back" button feature
@@ -57,6 +60,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const mySavedPrayersHeading = document.getElementById('my-saved-prayers-heading');
     const loginPromptMessage = document.getElementById('login-prompt-message');
     let currentCalendarDate = new Date(); // For calendar navigation
+
+    // Settings Modal UI Elements
+    const settingsButton = document.getElementById('settings-button');
+    const settingsModal = document.getElementById('settings-modal');
+    const closeSettingsModalButton = document.getElementById('close-settings-modal-button');
+    const categorySettingsList = document.getElementById('category-settings-list');
+    const saveSettingsButton = document.getElementById('save-settings-button');
+    const cancelSettingsButton = document.getElementById('cancel-settings-button');
 
     // Scripture Modal UI Elements (assuming they are in index.html)
     const scriptureModal = document.getElementById('scripture-modal');
@@ -214,8 +225,8 @@ document.addEventListener('DOMContentLoaded', () => {
             // { prompt: "text...", scripture_references: [...] }
             groupedByCategory[category].push(item);
         }
-        // Initialize prayer history
-        for (const categoryName of PRAYER_CATEGORY_ORDER) {
+        // Initialize prayer history and current prompts for the user's active categories
+        for (const categoryName of userPrayerCategoryOrder) {
             prayerHistory[categoryName] = [];
             currentPromptsDisplayed[categoryName] = null; // Initialize as null
         }
@@ -409,7 +420,8 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error("No prompts available to display.");
             return;
         }
-        for (const categoryName of PRAYER_CATEGORY_ORDER) {
+        // Display prayer segments based on the user's category order
+        for (const categoryName of userPrayerCategoryOrder) {
             // Save current prompt to history before getting a new one
             // Use the stored promptData object directly
             if (currentPromptsDisplayed[categoryName]) { // Check if it's not null (i.e., not a placeholder)
@@ -485,6 +497,7 @@ document.addEventListener('DOMContentLoaded', () => {
             logoutButton.style.display = 'inline-block';
             savePrayerButton.style.display = 'block'; // Make save button block to take full width
             mySavedPrayersHeading.style.display = 'block';
+            if(settingsButton) settingsButton.style.display = 'inline-block'; // Show settings button
             savedPrayersSection.style.display = 'block'; // Show the whole section
             calendarContainer.style.display = 'block'; // Show calendar by default
         } else {
@@ -498,6 +511,7 @@ document.addEventListener('DOMContentLoaded', () => {
             savePrayerButton.style.display = 'none';
             viewCalendarButton.style.display = 'none';
             calendarContainer.style.display = 'none';
+            if(settingsButton) settingsButton.style.display = 'none'; // Hide settings button
             recalledPrayerContainer.style.display = 'none';
             recalledPrayerListContainer.style.display = 'none';
             calendarGrid.innerHTML = ''; // Clear calendar grid
@@ -513,7 +527,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // Use map to create promises for each segment's data, including potential async encryption
-        const segmentDataPromises = PRAYER_CATEGORY_ORDER.map(async categoryName => {
+        // Iterate over the user's current category order
+        const segmentDataPromises = userPrayerCategoryOrder.map(async categoryName => {
             const categoryId = `category-${categoryName.replace(/[\s/]+/g, '-')}`;
             const categoryDiv = document.getElementById(categoryId);
             if (categoryDiv) {
@@ -536,7 +551,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (contentP && contentP.textContent !== 'Loading...' && !contentP.textContent.startsWith('(No prompt available for')) {
                     return {
                         category: categoryName,
-                        textWithScripture: contentP.textContent,
+                        textWithScripture: contentP.innerHTML, // Save HTML to preserve scripture links
+                        promptText: currentPromptsDisplayed[categoryName] ? currentPromptsDisplayed[categoryName].prompt : "", // Store the raw prompt text
                         reflection: reflectionPayload
                     };
                 }
@@ -825,9 +841,120 @@ document.addEventListener('DOMContentLoaded', () => {
         if (scriptureModalBody) scriptureModalBody.innerHTML = ''; // Clear content
     }
 
-    // --- Initialization ---
+    // --- Settings Modal Functions ---
+    function openSettingsModal() {
+        if (!currentUser) {
+            // alert("Please log in to change settings."); // Or simply don't show the button
+            return;
+        }
+        populateSettingsModal();
+        if (settingsModal) settingsModal.style.display = 'block';
+    }
 
+    function closeSettingsModal() {
+        if (settingsModal) settingsModal.style.display = 'none';
+    }
+
+    function populateSettingsModal() {
+        if (!categorySettingsList) return;
+        categorySettingsList.innerHTML = ''; // Clear existing items
+
+        DEFAULT_PRAYER_CATEGORIES.forEach(categoryName => {
+            const listItem = document.createElement('li');
+
+            const dragHandle = document.createElement('span');
+            dragHandle.className = 'drag-handle';
+            dragHandle.innerHTML = '&#x2630;&nbsp;'; // Hamburger icon for dragging
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.id = `setting-cb-${categoryName.replace(/[\s/]+/g, '-')}`;
+            checkbox.value = categoryName;
+            checkbox.checked = userPrayerCategoryOrder.includes(categoryName); // Check if it's currently active
+
+            const label = document.createElement('label');
+            label.htmlFor = checkbox.id;
+            label.textContent = categoryName;
+
+            listItem.appendChild(dragHandle);
+            listItem.appendChild(checkbox);
+            listItem.appendChild(label);
+            categorySettingsList.appendChild(listItem);
+        });
+
+        // Initialize SortableJS for drag-and-drop reordering
+        if (typeof Sortable !== 'undefined' && categorySettingsList) {
+            new Sortable(categorySettingsList, {
+                animation: 150, // ms, animation speed moving items when sorting, `0` — without animation
+                handle: '.drag-handle', // Restrict drag start to elements with the .drag-handle class
+                ghostClass: 'sortable-ghost', // Class name for the drop placeholder
+            });
+        }
+    }
+
+    function saveUserSettings() {
+        if (!categorySettingsList) return;
+
+        const newOrder = [];
+        const listItems = categorySettingsList.querySelectorAll('li');
+
+        listItems.forEach(listItem => {
+            const checkbox = listItem.querySelector('input[type="checkbox"]');
+            if (checkbox && checkbox.checked) {
+                newOrder.push(checkbox.value); // checkbox.value is the categoryName
+            }
+        });
+
+        userPrayerCategoryOrder = newOrder;
+
+        try {
+            localStorage.setItem(USER_SETTINGS_KEY, JSON.stringify(userPrayerCategoryOrder));
+            console.log("User settings saved:", userPrayerCategoryOrder);
+        } catch (e) {
+            console.error("Error saving user settings to localStorage:", e);
+        }
+
+        rebuildPrayerUI();
+        closeSettingsModal();
+    }
+
+    function rebuildPrayerUI() {
+        prayerContainer.innerHTML = ''; // Clear existing UI
+        userPrayerCategoryOrder.forEach(categoryName => { // Create UI for active categories in user's order
+            createCategoryUI(categoryName);
+        });
+        groupPrompts(); // Re-initialize history/trackers for the new category set/order
+        displayFullPrayer(); // Refresh the displayed prayer with new settings
+    }
+
+    function loadUserSettings() {
+        try {
+            const savedSettings = localStorage.getItem(USER_SETTINGS_KEY);
+            if (savedSettings) {
+                const parsedSettings = JSON.parse(savedSettings);
+                if (Array.isArray(parsedSettings) && parsedSettings.length > 0) {
+                    // Basic validation: ensure all loaded categories are still in DEFAULT_PRAYER_CATEGORIES
+                    // This prevents issues if a category is removed from the app in the future.
+                    userPrayerCategoryOrder = parsedSettings.filter(cat => DEFAULT_PRAYER_CATEGORIES.includes(cat));
+                    if (userPrayerCategoryOrder.length === 0) { // If all saved categories were invalid
+                        userPrayerCategoryOrder = [...DEFAULT_PRAYER_CATEGORIES];
+                    }
+                } else if (Array.isArray(parsedSettings) && parsedSettings.length === 0) {
+                    userPrayerCategoryOrder = []; // User explicitly saved an empty list
+                }
+                console.log("User settings loaded:", userPrayerCategoryOrder);
+            }
+        } catch (e) {
+            console.error("Error loading user settings from localStorage:", e);
+            // Fallback to default if loading fails
+            userPrayerCategoryOrder = [...DEFAULT_PRAYER_CATEGORIES];
+        }
+    }
+
+    // --- Initialization ---
     async function initializeApp() {
+        loadUserSettings(); // Load user settings first
+
         if (!window.crypto || !window.crypto.subtle) {
             console.warn("Web Crypto API not available. Reflection encryption will be disabled.");
             // You might want to disable reflection-related buttons or show a persistent message to the user.
@@ -835,7 +962,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Create UI structure first
         prayerContainer.innerHTML = ''; // Clear any existing content
-        PRAYER_CATEGORY_ORDER.forEach(categoryName => {
+        userPrayerCategoryOrder.forEach(categoryName => {
             createCategoryUI(categoryName);
         });
 
@@ -892,6 +1019,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 recalledPrayerContainer.style.display = 'none';
                 recalledPrayerListContainer.style.display = 'none'; // Hide list view
                 calendarContainer.style.display = 'block'; // Always show calendar after closing prayer view
+            });
+        }
+
+        // Settings Modal Listeners
+        if (settingsButton) {
+            settingsButton.addEventListener('click', openSettingsModal);
+        }
+        if (closeSettingsModalButton) {
+            closeSettingsModalButton.addEventListener('click', closeSettingsModal);
+        }
+        if (cancelSettingsButton) { // Assuming cancel just closes without saving
+            cancelSettingsButton.addEventListener('click', closeSettingsModal);
+        }
+        if (saveSettingsButton) {
+            saveSettingsButton.addEventListener('click', () => {
+                saveUserSettings();
             });
         }
 
