@@ -724,6 +724,31 @@ document.addEventListener('DOMContentLoaded', () => {
                 const chapterNumbers = tempDiv.querySelectorAll('span.chapter-num');
                 chapterNumbers.forEach(span => span.remove());
 
+                // Remove footnote markers from the text (ESV often uses <span class="footnote">)
+                const footnoteMarkers = tempDiv.querySelectorAll('span.footnote');
+                footnoteMarkers.forEach(marker => marker.remove());
+
+                // Remove the entire "Footnotes" section (ESV often uses <div class="footnotes">)
+                const footnotesSection = tempDiv.querySelector('div.footnotes');
+                if (footnotesSection) {
+                    footnotesSection.remove();
+                }
+
+                // Remove <h3> elements that are likely footnote headings
+                const h3Elements = tempDiv.querySelectorAll('h3');
+                h3Elements.forEach(h3 => {
+                    if (h3.textContent.trim().toLowerCase() === 'footnotes') {
+                        h3.remove();
+                    }
+                });
+
+                // ADDITION: Attempt to remove other common footnote item wrappers if they exist,
+                // especially those with class "note" as seen from inspecting the <i> tag's parent.
+                // This targets <p class="note">, <div class="note">, <li class="note">, etc.
+                // and would include elements like <p class="note translation">.
+                const potentialStrayFootnoteItems = tempDiv.querySelectorAll('p.note, div.note, li.note, span.note');
+                potentialStrayFootnoteItems.forEach(item => item.remove());
+
                 let cleanedHtml = tempDiv.innerHTML.trim();
 
                 // Add link to external Bible site
