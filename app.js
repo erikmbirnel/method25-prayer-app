@@ -663,7 +663,6 @@ document.addEventListener('DOMContentLoaded', () => {
             alert("Cannot display scripture: UI elements missing.");
             return;
         }
-
         scriptureModalTitle.textContent = `Loading: ${reference}`;
         scriptureModalBody.innerHTML = '<em>Looking up passage...</em>';
         showScriptureModal();
@@ -707,25 +706,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 const verseHeaders = tempDiv.querySelectorAll('h2');
                 verseHeaders.forEach(header => header.remove());
 
-                // Target 'a.copyright' for the ESV links.
-                // "Hide" intermediate copyright links by matching their color to the modal background.
-                // The last one will remain visible.
-                const copyrightLinks = tempDiv.querySelectorAll('a.copyright');
-                const modalBackgroundColor = '#fefefe'; // From your style.css .modal-content
+                // Find all paragraph elements that contain an 'a.copyright' link.
+                // Remove all such paragraphs except for the very last one.
+                // This will remove intermediate (ESV) lines and the empty lines/parentheses they might leave.
+                const allParagraphs = Array.from(tempDiv.querySelectorAll('p'));
+                const paragraphsContainingCopyright = allParagraphs.filter(p => p.querySelector('a.copyright'));
 
-                copyrightLinks.forEach((link, index) => {
-                    // Apply to all but the last one
-                    if (link && index < copyrightLinks.length - 1) { 
-                        link.style.setProperty('color', modalBackgroundColor, 'important');
-                        link.style.setProperty('user-select', 'none', 'important');
-                        link.style.setProperty('text-decoration', 'none', 'important'); // Hide underline
-                    } else if (link) {
-                        // Ensure the last link has default link styling if it was somehow altered
-                        link.style.removeProperty('color');
-                        link.style.removeProperty('user-select');
-                        link.style.removeProperty('text-decoration');
+                if (paragraphsContainingCopyright.length > 1) {
+                    // Iterate up to the second to last one and remove them
+                    for (let i = 0; i < paragraphsContainingCopyright.length - 1; i++) {
+                        paragraphsContainingCopyright[i].remove();
                     }
-                });
+                }
+                // The last paragraph containing a copyright link (if any) will remain.
 
                 // Remove ESV-specific chapter number spans if they exist
                 const chapterNumbers = tempDiv.querySelectorAll('span.chapter-num');
