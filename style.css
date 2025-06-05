@@ -340,3 +340,17 @@ h1 {
     margin-top: 1em;
     color: #777;
 }
+
+.external-context-link-container {
+    text-align: right;
+    margin-top: 20px; /* Space above the link */
+    font-size: 0.85em;
+}
+
+.external-context-link-container a { /* Target the <a> tag within the container */
+    color: #007bff; /* Standard link blue */
+    text-decoration: underline;
+}
+.external-context-link-container a:hover {
+    color: #0056b3; /* Darker blue on hover */
+}

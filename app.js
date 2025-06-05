@@ -724,7 +724,29 @@ document.addEventListener('DOMContentLoaded', () => {
                 const chapterNumbers = tempDiv.querySelectorAll('span.chapter-num');
                 chapterNumbers.forEach(span => span.remove());
 
-                scriptureModalBody.innerHTML = tempDiv.innerHTML.trim(); // Set the cleaned HTML
+                let cleanedHtml = tempDiv.innerHTML.trim();
+
+                // Add link to external Bible site
+                const canonicalReference = data.canonical || reference;
+                let queryForExternalSite = canonicalReference.split(':')[0].trim(); // Default e.g. "Hebrews 9" or "Psalm 119"
+
+                // Regex to more reliably get Book + Chapter for URL
+                // (e.g., "1 Samuel 2" from "1 Samuel 2:1-10")
+                const bookChapterMatch = canonicalReference.match(/^([1-3]?\s?[a-zA-Z]+)\s*(\d+)/);
+                if (bookChapterMatch && bookChapterMatch[1] && bookChapterMatch[2]) {
+                    queryForExternalSite = `${bookChapterMatch[1].trim()} ${bookChapterMatch[2]}`;
+                }
+                // If canonicalReference is just a book name (e.g., "Obadiah"), queryForExternalSite will be "Obadiah"
+                // BibleGateway handles this by defaulting to chapter 1.
+
+                const bibleGatewayQuery = encodeURIComponent(queryForExternalSite);
+                const externalLinkUrl = `https://www.biblegateway.com/passage/?search=${bibleGatewayQuery}&version=ESV`;
+                const externalLinkHtml = 
+                    `<p class="external-context-link-container">` +
+                    `<a href="${externalLinkUrl}" target="_blank" rel="noopener noreferrer">See in context - must leave app</a>` +
+                    `</p>`;
+                cleanedHtml += externalLinkHtml;
+                scriptureModalBody.innerHTML = cleanedHtml;
             } else {
                 scriptureModalBody.innerHTML = '<p>Scripture passage not found or an error occurred.</p>';
             }
