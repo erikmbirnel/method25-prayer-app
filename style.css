@@ -405,3 +405,26 @@ h1 {
     opacity: 0.4;
     background: #c8ebfb; /* Light blue background for placeholder */
 }
+
+/* --- Audio Controls --- */
+#audio-controls {
+    margin-top: 15px;
+    text-align: center;
+    display: none; /* Initially hidden, app.js will show it when user is logged in */
+}
+
+#audio-controls .action-button {
+    /* Inherits general action-button styles */
+}
+
+#playAudioBtn {
+    background-color: #4CAF50; /* Green */
+}
+
+#pauseAudioBtn {
+    background-color: #ff9800; /* Orange */
+}
+
+#stopAudioBtn {
+    background-color: #f44336; /* Red */
+}

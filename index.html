@@ -48,6 +48,13 @@
         <!-- End of example structure -->
     </div>
 
+    <!-- Audio Controls -->
+    <div id="audio-controls"> <!-- Initially hidden via CSS -->
+        <button id="playAudioBtn" class="action-button">Listen to Prayer</button>
+        <button id="pauseAudioBtn" class="action-button" style="display:none;">Pause</button>
+        <button id="stopAudioBtn" class="action-button" style="display:none;">Stop</button>
+        <div id="currentReadingText" style="margin-top: 10px; font-style: italic; color: #555;"></div>
+    </div>
     <div id="prayer-actions-container" style="margin-top: 20px;">
         <button id="generate-all-button" class="action-button primary-action">Refresh Full Prayer</button>
         <div id="secondary-actions-container" style="margin-top: 10px; display: flex; justify-content: space-between;">

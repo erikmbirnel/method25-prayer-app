@@ -69,6 +69,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const saveSettingsButton = document.getElementById('save-settings-button');
     const cancelSettingsButton = document.getElementById('cancel-settings-button');
 
+    // Audio Controls UI Elements
+    const audioControlsContainer = document.getElementById('audio-controls');
+    const playAudioBtn = document.getElementById('playAudioBtn');
+    const pauseAudioBtn = document.getElementById('pauseAudioBtn');
+    const stopAudioBtn = document.getElementById('stopAudioBtn');
+    const currentReadingTextDiv = document.getElementById('currentReadingText');
+    let speechSynthesis = window.speechSynthesis; // Web Speech API instance
+
     // Scripture Modal UI Elements (assuming they are in index.html)
     const scriptureModal = document.getElementById('scripture-modal');
     const scriptureModalTitle = document.getElementById('scripture-modal-title');
@@ -415,6 +423,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function displayFullPrayer() {
+        stopAudioPlayback(); // Stop any ongoing audio when generating a new prayer
         if (Object.keys(groupedByCategory).length === 0) {
             prayerContainer.innerHTML = "<p>No prayer prompts loaded. Please check data source.</p>";
             console.error("No prompts available to display.");
@@ -432,6 +441,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const segmentText = formatSegment(categoryName, promptData);
             updateCategoryDisplay(categoryName, segmentText, promptData); // Pass the new promptData (or null)
         }
+        if (playAudioBtn) {
+            playAudioBtn.disabled = false; // Enable play button after prayer is displayed
+        }
     }
 
     function recordHistory(categoryName, promptData) {
@@ -443,6 +455,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function reRandomizeCategory(categoryName) {
+        stopAudioPlayback(); // Stop audio when re-randomizing a category
         // Save current prompt to history before getting a new one
         // Use the stored promptData object directly
         if (currentPromptsDisplayed[categoryName]) { // Check if it's not null
@@ -454,6 +467,7 @@ document.addEventListener('DOMContentLoaded', () => {
         updateCategoryDisplay(categoryName, segmentText, promptData); // Pass the new promptData (or null)
     }
     function goBackCategory(categoryName) {
+        stopAudioPlayback(); // Stop audio when going back
         if (prayerHistory[categoryName] && prayerHistory[categoryName].length > 0) {
             const previousPromptData = prayerHistory[categoryName].shift(); // This will be a valid promptData object
             const segmentText = formatSegment(categoryName, previousPromptData);
@@ -477,6 +491,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function handleLogout() {
         auth.signOut()
             .then(() => {
+                stopAudioPlayback(); // Stop audio on logout
                 console.log("User logged out");
                 // User is signed out.
             })
@@ -498,6 +513,7 @@ document.addEventListener('DOMContentLoaded', () => {
             savePrayerButton.style.display = 'block'; // Make save button block to take full width
             mySavedPrayersHeading.style.display = 'block';
             if(settingsButton) settingsButton.style.display = 'inline-block'; // Show settings button
+            if(audioControlsContainer) audioControlsContainer.style.display = 'block'; // Show audio controls
             savedPrayersSection.style.display = 'block'; // Show the whole section
             calendarContainer.style.display = 'block'; // Show calendar by default
         } else {
@@ -512,6 +528,7 @@ document.addEventListener('DOMContentLoaded', () => {
             viewCalendarButton.style.display = 'none';
             calendarContainer.style.display = 'none';
             if(settingsButton) settingsButton.style.display = 'none'; // Hide settings button
+            if(audioControlsContainer) audioControlsContainer.style.display = 'none'; // Hide audio controls
             recalledPrayerContainer.style.display = 'none';
             recalledPrayerListContainer.style.display = 'none';
             calendarGrid.innerHTML = ''; // Clear calendar grid
@@ -521,6 +538,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Firestore: Save and Load Prayers ---
     async function saveCurrentPrayer() { // Made the function async
+        stopAudioPlayback(); // Stop audio when saving
         if (!currentUser) {
             alert("Please log in to save your prayer.");
             return;
@@ -623,6 +641,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function displaySingleRecalledPrayer(prayerDoc) { // Made async
+        stopAudioPlayback(); // Stop audio when viewing a saved prayer
         recalledPrayerDate.textContent = prayerDoc.createdAt.toDate().toLocaleDateString() + " " + prayerDoc.createdAt.toDate().toLocaleTimeString();
         
         const segmentPromises = prayerDoc.segments.map(async segment => { // map returns promises
@@ -646,6 +665,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function displayRecalledPrayerList(prayers, date) { // Made async
+        stopAudioPlayback(); // Stop audio when viewing saved prayer list
         recalledPrayerList.innerHTML = ''; // Clear previous list
         recalledPrayerListDate.textContent = date.toLocaleDateString();
 
@@ -708,6 +728,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- ESV Scripture API Functions ---
     async function fetchAndDisplayScripture(reference) {
+        stopAudioPlayback(); // Stop audio when opening scripture modal
         if (!scriptureModal || !scriptureModalTitle || !scriptureModalBody) {
             console.error("Scripture modal elements not found in the DOM.");
             alert("Cannot display scripture: UI elements missing.");
@@ -843,6 +864,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Settings Modal Functions ---
     function openSettingsModal() {
+        stopAudioPlayback(); // Stop audio when opening settings modal
         if (!currentUser) {
             // alert("Please log in to change settings."); // Or simply don't show the button
             return;
@@ -893,6 +915,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function saveUserSettings() {
+        stopAudioPlayback(); // Stop audio when saving settings (as UI will rebuild)
         if (!categorySettingsList) return;
 
         const newOrder = [];
@@ -928,6 +951,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function loadUserSettings() {
+        // This runs before UI is built, so no need to stop audio here
         try {
             const savedSettings = localStorage.getItem(USER_SETTINGS_KEY);
             if (savedSettings) {
@@ -948,6 +972,73 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error("Error loading user settings from localStorage:", e);
             // Fallback to default if loading fails
             userPrayerCategoryOrder = [...DEFAULT_PRAYER_CATEGORIES];
+        }
+    }
+
+    // --- Audio Playback Functions ---
+    let utteranceQueue = [];
+    let isSpeaking = false;
+    let currentUtteranceIndex = 0;
+    let timeoutId; // To store the timeout for pauses
+
+    function speakText(textToSpeak, onEndCallback) {
+        if (!speechSynthesis) {
+            console.error("Web Speech API not supported in this browser.");
+            if (onEndCallback) onEndCallback(); // Call callback to prevent blocking
+            return;
+        }
+        if (!textToSpeak || textToSpeak.trim() === '') {
+             console.warn("Attempted to speak empty text.");
+             if (onEndCallback) onEndCallback(); // Call callback immediately
+             return;
+        }
+
+        const utterance = new SpeechSynthesisUtterance(textToSpeak);
+        // Optional: Set voice, pitch, rate
+        // You can iterate through available voices: speechSynthesis.getVoices()
+        // utterance.voice = speechSynthesis.getVoices().find(voice => voice.name === 'Google US English'); // Example
+        utterance.pitch = 1; // 0 to 2, 1 is default
+        utterance.rate = 1;  // 0.1 to 10, 1 is default
+
+        utterance.onend = () => {
+            isSpeaking = false;
+            if (onEndCallback) {
+                onEndCallback();
+            }
+        };
+        utterance.onerror = (event) => {
+            console.error('Speech synthesis error:', event.error);
+            isSpeaking = false;
+            if (onEndCallback) {
+                onEndCallback();
+            }
+        };
+
+        if (currentReadingTextDiv) currentReadingTextDiv.textContent = `Reading: "${textToSpeak.substring(0, 100)}..."`; // Show what's being read (limit length)
+        speechSynthesis.speak(utterance);
+        isSpeaking = true;
+    }
+
+    function processQueue() {
+        if (currentUtteranceIndex < utteranceQueue.length) {
+            const item = utteranceQueue[currentUtteranceIndex];
+
+            if (item.type === 'speech') {
+                speakText(item.text, () => {
+                    currentUtteranceIndex++;
+                    processQueue(); // Move to the next item after speaking
+                });
+            } else if (item.type === 'pause') {
+                if (currentReadingTextDiv) currentReadingTextDiv.textContent = `Pausing for ${item.duration / 1000} seconds...`;
+                clearTimeout(timeoutId); // Clear any existing timeout
+                timeoutId = setTimeout(() => {
+                    currentUtteranceIndex++;
+                    processQueue(); // Move to the next item after pause
+                }, item.duration);
+            }
+        } else {
+            // End of sequence
+            stopAudioPlayback(); // Use the stop function to reset UI
         }
     }
 
@@ -1000,6 +1091,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (savePrayerButton) {
             savePrayerButton.addEventListener('click', saveCurrentPrayer);
         }
+
         // Removed viewCalendarButton listener as calendar is always visible when logged in
 
         if (prevMonthButton) {
@@ -1015,6 +1107,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
         if (closeRecalledPrayerButton) {
+            // No need to stop audio here, as displaySingleRecalledPrayer already stops it
             closeRecalledPrayerButton.addEventListener('click', () => {
                 recalledPrayerContainer.style.display = 'none';
                 recalledPrayerListContainer.style.display = 'none'; // Hide list view
@@ -1038,6 +1131,42 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
+        // Audio Control Listeners
+        if (playAudioBtn) {
+            playAudioBtn.addEventListener('click', () => {
+                if (!speechSynthesis) {
+                     alert("Text-to-Speech is not supported in your browser.");
+                     return;
+                }
+                buildPrayerAudioQueue(); // Build the queue from current content
+                if (utteranceQueue.length > 0) {
+                    playAudioBtn.style.display = 'none';
+                    if (pauseAudioBtn) pauseAudioBtn.style.display = 'inline-block';
+                    if (stopAudioBtn) stopAudioBtn.style.display = 'inline-block';
+                    processQueue(); // Start processing the queue
+                } else {
+                    if (currentReadingTextDiv) currentReadingTextDiv.textContent = "Nothing to read.";
+                }
+            });
+             // Initially disable play button until prayer is loaded
+             playAudioBtn.disabled = true;
+        }
+        if (pauseAudioBtn) {
+            pauseAudioBtn.addEventListener('click', () => {
+                if (speechSynthesis.speaking) {
+                    speechSynthesis.pause();
+                    clearTimeout(timeoutId); // Pause any active timeout
+                    pauseAudioBtn.textContent = 'Resume';
+                } else if (speechSynthesis.paused) {
+                    speechSynthesis.resume();
+                    pauseAudioBtn.textContent = 'Pause';
+                }
+            });
+        }
+        if (stopAudioBtn) {
+            stopAudioBtn.addEventListener('click', stopAudioPlayback); // Use the dedicated stop function
+        }
+
         // Event listener for closing the scripture modal
         if (closeScriptureModalButton) {
             closeScriptureModalButton.addEventListener('click', hideScriptureModal);
@@ -1057,6 +1186,39 @@ document.addEventListener('DOMContentLoaded', () => {
         window.addEventListener('keydown', (event) => {
             if (event.key === 'Escape' && scriptureModal && scriptureModal.style.display !== 'none') {
                 hideScriptureModal();
+            }
+        });
+
+        // Important: Populate voices after they are loaded
+        if (speechSynthesis) {
+            speechSynthesis.onvoiceschanged = () => {
+                console.log("Voices loaded:", speechSynthesis.getVoices());
+                // You could add logic here to let the user select a voice
+            };
+        } else {
+             console.warn("Web Speech API (SpeechSynthesis) not supported.");
+             // Hide audio controls or show a message if not supported
+             if (audioControlsContainer) audioControlsContainer.style.display = 'none';
+        }
+    }
+
+    // Function to build the utterance queue based on current prayer data
+    function buildPrayerAudioQueue() {
+        utteranceQueue = [];
+        currentUtteranceIndex = 0;
+
+        userPrayerCategoryOrder.forEach(categoryName => {
+            const promptData = currentPromptsDisplayed[categoryName];
+
+            if (promptData && promptData.prompt && promptData.prompt.trim() !== '') {
+                utteranceQueue.push({ type: 'speech', text: `${categoryName}.` });
+                utteranceQueue.push({ type: 'speech', text: promptData.prompt });
+
+                if (promptData.scripture_references && promptData.scripture_references.length > 0) {
+                    const referencesText = `Scripture references: ${promptData.scripture_references.join(', ')}.`;
+                    utteranceQueue.push({ type: 'speech', text: referencesText });
+                }
+                utteranceQueue.push({ type: 'pause', duration: 20000 }); // 20 seconds pause
             }
         });
     }
@@ -1098,6 +1260,20 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Function to stop audio playback and reset UI
+    function stopAudioPlayback() {
+        if (speechSynthesis && speechSynthesis.speaking) {
+            speechSynthesis.cancel();
+        }
+        clearTimeout(timeoutId); // Clear any active timeout
+        utteranceQueue = []; // Clear the queue
+        currentUtteranceIndex = 0;
+        isSpeaking = false;
+        if (playAudioBtn) playAudioBtn.style.display = 'inline-block';
+        if (pauseAudioBtn) { pauseAudioBtn.style.display = 'none'; pauseAudioBtn.textContent = 'Pause'; }
+        if (stopAudioBtn) stopAudioBtn.style.display = 'none';
+        if (currentReadingTextDiv) currentReadingTextDiv.textContent = '';
+    }
     // Initial render of the calendar if user is already logged in on page load
     auth.onAuthStateChanged(user => {
         if (user) renderCalendar();
