@@ -665,6 +665,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 recalledPrayerList.appendChild(listItem);
             });
 
+            // Remove existing "Back to Calendar" button to prevent duplicates
+            const existingBackToCalendarButton = document.getElementById('back-to-calendar-from-list-button');
+            if (existingBackToCalendarButton && existingBackToCalendarButton.parentNode === recalledPrayerListContainer) {
+                recalledPrayerListContainer.removeChild(existingBackToCalendarButton);
+            }
+
             // Add "Back to Calendar" button if there are multiple prayers
             const backToCalendarButton = document.createElement('button');
             backToCalendarButton.id = 'back-to-calendar-from-list-button'; // Added ID for styling
