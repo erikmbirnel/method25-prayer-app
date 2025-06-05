@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log("PWA App Started");
 
     const PRAYER_CATEGORY_ORDER = [
-        "Adoration/Address",
+        "Adoration",
         "Thanksgiving",
         "Confession",
         "Petition",
