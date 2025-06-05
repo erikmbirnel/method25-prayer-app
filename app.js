@@ -707,15 +707,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 const verseHeaders = tempDiv.querySelectorAll('h2');
                 verseHeaders.forEach(header => header.remove());
 
-                // Remove all p.copyright elements except the last one
+                // "Hide" intermediate p.copyright elements by matching their color to the modal background
+                // The last one will remain visible.
                 const copyrights = tempDiv.querySelectorAll('p.copyright');
-                if (copyrights.length > 1) {
-                    for (let i = 0; i < copyrights.length - 1; i++) {
-                        copyrights[i].remove();
+                const modalBackgroundColor = '#fefefe'; // From your style.css .modal-content
+
+                copyrights.forEach((p, index) => {
+                    if (index < copyrights.length - 1) { // Apply to all but the last one
+                        p.style.color = modalBackgroundColor;
+                        p.style.userSelect = 'none'; // Make it non-selectable for better "hiding"
                     }
-                }
-                // If copyrights.length is 0 or 1, no intermediate copyrights are removed,
-                // and the single one (if present) or none will remain.
+                });
 
                 // Remove ESV-specific chapter number spans if they exist
                 const chapterNumbers = tempDiv.querySelectorAll('span.chapter-num');
