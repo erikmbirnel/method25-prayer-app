@@ -75,7 +75,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const pauseAudioBtn = document.getElementById('pauseAudioBtn');
     const stopAudioBtn = document.getElementById('stopAudioBtn');
     const currentReadingTextDiv = document.getElementById('currentReadingText');
-    let speechSynthesis = window.speechSynthesis; // Web Speech API instance
+    const googleTtsAudioPlayer = document.getElementById('googleTtsAudioPlayer'); // Player for Google TTS
+    const GOOGLE_TTS_API_KEY = 'AIzaSyDrZq2m6ZJBN3DXC_nzsOCHZL2zOVBtJpg'; // YOUR_API_KEY - Stored here for example, see security warning
 
     // Scripture Modal UI Elements (assuming they are in index.html)
     const scriptureModal = document.getElementById('scripture-modal');
@@ -982,47 +983,69 @@ document.addEventListener('DOMContentLoaded', () => {
     let timeoutId; // To store the timeout for pauses
 
     function speakText(textToSpeak, onEndCallback) {
-        if (!speechSynthesis) {
-            console.error("Web Speech API not supported in this browser.");
-            if (onEndCallback) onEndCallback(); // Call callback to prevent blocking
-            return;
-        }
         if (!textToSpeak || textToSpeak.trim() === '') {
              console.warn("Attempted to speak empty text.");
              if (onEndCallback) onEndCallback(); // Call callback immediately
              return;
         }
 
-        const utterance = new SpeechSynthesisUtterance(textToSpeak);
-        // Optional: Set voice, pitch, rate
-        // You can iterate through available voices: speechSynthesis.getVoices()
-        // utterance.voice = speechSynthesis.getVoices().find(voice => voice.name === 'Google US English'); // Example
-        utterance.pitch = 1; // 0 to 2, 1 is default
-        utterance.rate = 1;  // 0.1 to 10, 1 is default
-
-        utterance.onend = () => {
-            isSpeaking = false;
-            if (onEndCallback) {
-                onEndCallback();
-            }
-        };
-        utterance.onerror = (event) => {
-            console.error('Speech synthesis error:', event.error);
-            isSpeaking = false;
-            if (onEndCallback) {
-                onEndCallback();
-            }
+        const requestBody = {
+            input: { text: textToSpeak },
+            voice: { languageCode: 'en-US', name: 'en-US-Wavenet-D' }, // Example voice, choose as needed
+            audioConfig: { audioEncoding: 'MP3' }
         };
 
-        if (currentReadingTextDiv) currentReadingTextDiv.textContent = `Reading: "${textToSpeak.substring(0, 100)}..."`; // Show what's being read (limit length)
-        speechSynthesis.speak(utterance);
+        if (currentReadingTextDiv) currentReadingTextDiv.textContent = `Synthesizing: "${textToSpeak.substring(0, 100)}..."`;
         isSpeaking = true;
+
+        fetch(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${GOOGLE_TTS_API_KEY}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(requestBody)
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(err => { throw new Error(`Google TTS API error: ${response.status} - ${err.error.message || response.statusText}`); });
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.audioContent && googleTtsAudioPlayer) {
+                if (currentReadingTextDiv) currentReadingTextDiv.textContent = `Reading: "${textToSpeak.substring(0, 100)}..."`;
+                googleTtsAudioPlayer.src = `data:audio/mp3;base64,${data.audioContent}`;
+                googleTtsAudioPlayer.play()
+                    .catch(e => {
+                        console.error("Error playing audio:", e);
+                        isSpeaking = false;
+                        if (onEndCallback) onEndCallback();
+                    });
+
+                googleTtsAudioPlayer.onended = () => {
+                    isSpeaking = false;
+                    if (onEndCallback) onEndCallback();
+                };
+            } else {
+                throw new Error("No audio content received from Google TTS API.");
+            }
+        })
+        .catch(error => {
+            console.error('Google TTS API request or playback failed:', error);
+            if (currentReadingTextDiv) currentReadingTextDiv.textContent = `Error: Could not play audio.`;
+            isSpeaking = false;
+            if (onEndCallback) onEndCallback();
+        });
     }
 
     function processQueue() {
+        if (!googleTtsAudioPlayer) {
+            console.error("Audio player element not found.");
+            stopAudioPlayback(); // Stop if player is missing
+            return;
+        }
         if (currentUtteranceIndex < utteranceQueue.length) {
             const item = utteranceQueue[currentUtteranceIndex];
-
             if (item.type === 'speech') {
                 speakText(item.text, () => {
                     currentUtteranceIndex++;
@@ -1134,10 +1157,6 @@ document.addEventListener('DOMContentLoaded', () => {
         // Audio Control Listeners
         if (playAudioBtn) {
             playAudioBtn.addEventListener('click', () => {
-                if (!speechSynthesis) {
-                     alert("Text-to-Speech is not supported in your browser.");
-                     return;
-                }
                 buildPrayerAudioQueue(); // Build the queue from current content
                 if (utteranceQueue.length > 0) {
                     playAudioBtn.style.display = 'none';
@@ -1153,13 +1172,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (pauseAudioBtn) {
             pauseAudioBtn.addEventListener('click', () => {
-                if (speechSynthesis.speaking) {
-                    speechSynthesis.pause();
+                if (googleTtsAudioPlayer && !googleTtsAudioPlayer.paused && isSpeaking) {
+                    googleTtsAudioPlayer.pause();
                     clearTimeout(timeoutId); // Pause any active timeout
                     pauseAudioBtn.textContent = 'Resume';
-                } else if (speechSynthesis.paused) {
-                    speechSynthesis.resume();
-                    pauseAudioBtn.textContent = 'Pause';
+                } else if (googleTtsAudioPlayer && googleTtsAudioPlayer.paused && isSpeaking) {
+                    googleTtsAudioPlayer.play().catch(e => console.error("Error resuming audio:", e));
+                    // If resuming a timed pause, processQueue will handle the next step after timeout
+                    // If resuming speech, it will continue.
+                    if (pauseAudioBtn) pauseAudioBtn.textContent = 'Pause';
                 }
             });
         }
@@ -1188,18 +1209,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 hideScriptureModal();
             }
         });
-
-        // Important: Populate voices after they are loaded
-        if (speechSynthesis) {
-            speechSynthesis.onvoiceschanged = () => {
-                console.log("Voices loaded:", speechSynthesis.getVoices());
-                // You could add logic here to let the user select a voice
-            };
-        } else {
-             console.warn("Web Speech API (SpeechSynthesis) not supported.");
-             // Hide audio controls or show a message if not supported
-             if (audioControlsContainer) audioControlsContainer.style.display = 'none';
-        }
     }
 
     // Function to build the utterance queue based on current prayer data
@@ -1262,8 +1271,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Function to stop audio playback and reset UI
     function stopAudioPlayback() {
-        if (speechSynthesis && speechSynthesis.speaking) {
-            speechSynthesis.cancel();
+        if (googleTtsAudioPlayer) {
+            googleTtsAudioPlayer.pause();
+            googleTtsAudioPlayer.src = ""; // Clear the source
         }
         clearTimeout(timeoutId); // Clear any active timeout
         utteranceQueue = []; // Clear the queue

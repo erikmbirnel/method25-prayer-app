@@ -418,7 +418,11 @@ h1 {
 }
 
 #playAudioBtn {
-    background-color: #4CAF50; /* Green */
+    background-color: #333; /* Dark grey */
+    display: block; /* Make it a block element */
+    width: 100%; /* Make it take full width */
+    padding: 24px; /* Match padding of save/generate buttons */
+    font-size: 1.2em; /* Match font-size of save/generate buttons */
 }
 
 #pauseAudioBtn {
