@@ -273,6 +273,15 @@ h1 {
 #close-recalled-prayer-button:hover:not(:disabled) {
     background-color: #6c7a7b; /* Darker Grey */
 }
+
+/* --- Back to Calendar from List Button --- */
+#back-to-calendar-from-list-button {
+    background-color: #95a5a6; /* A slightly different grey or neutral color */
+    display: block; /* Make it take full width */
+    width: 100%;
+    margin-top: 15px; /* Space above the button */
+    box-sizing: border-box;
+}
 /* Add this to your style.css */
 .scripture-link {
     color: #007bff;

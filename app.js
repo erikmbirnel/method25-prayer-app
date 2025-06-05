@@ -274,16 +274,16 @@ document.addEventListener('DOMContentLoaded', () => {
         contentP.className = 'prayer-text';
         contentP.textContent = 'Loading...'; // Placeholder
 
-        const rerandomizeButton = document.createElement('button');
-        rerandomizeButton.textContent = 'Refresh';
-        rerandomizeButton.className = 'rerandomize-button action-button'; // Added action-button for consistency
-        rerandomizeButton.addEventListener('click', () => reRandomizeCategory(categoryName));
-
         const backButton = document.createElement('button');
         backButton.textContent = 'Back';
         backButton.className = 'back-button action-button';
         backButton.disabled = true; // Initially disabled
         backButton.addEventListener('click', () => goBackCategory(categoryName));
+
+        const rerandomizeButton = document.createElement('button');
+        rerandomizeButton.textContent = 'Refresh';
+        rerandomizeButton.className = 'rerandomize-button action-button'; // Added action-button for consistency
+        rerandomizeButton.addEventListener('click', () => reRandomizeCategory(categoryName));
 
         const reflectionButton = document.createElement('button');
         reflectionButton.textContent = 'Reflect';
@@ -292,8 +292,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const buttonContainer = document.createElement('div');
         buttonContainer.className = 'category-button-container'; // Added class for styling
-        buttonContainer.appendChild(rerandomizeButton);
         buttonContainer.appendChild(backButton);
+        buttonContainer.appendChild(rerandomizeButton);
         buttonContainer.appendChild(reflectionButton);
 
         const reflectionAreaContainer = document.createElement('div');
@@ -326,14 +326,14 @@ document.addEventListener('DOMContentLoaded', () => {
         currentPromptsDisplayed[categoryName] = promptDataObject; // Store the current prompt object (or null)
 
         if (categoryDiv) {
-            const contentP = categoryDiv.querySelector('.prayer-text');
-            if (contentP) {
-                contentP.innerHTML = segmentText; // Changed to innerHTML to render scripture links
-            }
             // Update back button state
             const backButton = categoryDiv.querySelector('.back-button');
             if (backButton) {
                 backButton.disabled = !prayerHistory[categoryName] || prayerHistory[categoryName].length === 0;
+            }
+            const contentP = categoryDiv.querySelector('.prayer-text');
+            if (contentP) {
+                contentP.innerHTML = segmentText; // Changed to innerHTML to render scripture links
             }
             // Hide, clear, and unlock reflection area when prompt changes
             const reflectionAreaContainer = categoryDiv.querySelector('.reflection-area');
@@ -491,7 +491,7 @@ document.addEventListener('DOMContentLoaded', () => {
             userStatus.textContent = 'Not logged in.';
             loginButton.style.display = 'inline-block';
             if (loginPromptMessage) {
-                loginPromptMessage.textContent = "Login with your Google account to save prayers and customize your experience";
+                loginPromptMessage.textContent = "Login with your Google account to save prayers and customize your experience.";
                 loginPromptMessage.style.display = 'inline'; // Show prompt when not logged in
             }
             logoutButton.style.display = 'none';
@@ -642,14 +642,42 @@ document.addEventListener('DOMContentLoaded', () => {
             prayers.forEach(prayerDoc => {
                 const listItem = document.createElement('li');
                 const prayerTime = prayerDoc.createdAt.toDate().toLocaleTimeString();
-                // Create a summary or use the first segment's category
-                const summary = prayerDoc.segments.length > 0 ? prayerDoc.segments[0].category : "Prayer";
+                
+                let summary = "Prayer"; // Default summary
+                if (prayerDoc.segments && prayerDoc.segments.length > 0) {
+                    const firstSegment = prayerDoc.segments[0];
+                    if (firstSegment.promptText && firstSegment.promptText.trim() !== "") {
+                        const words = firstSegment.promptText.trim().split(/\s+/); // Split by one or more spaces
+                        summary = words.slice(0, 3).join(" ");
+                        if (words.length > 3) {
+                            summary += "...";
+                        }
+                    } else {
+                        // Fallback for older prayers or if promptText is empty
+                        summary = firstSegment.category || "Prayer";
+                    }
+                }
+
                 listItem.textContent = `${summary} at ${prayerTime}`;
                 listItem.addEventListener('click', async () => { // event listener callback is async
                     await displaySingleRecalledPrayer(prayerDoc);
                 });
                 recalledPrayerList.appendChild(listItem);
             });
+
+            // Add "Back to Calendar" button if there are multiple prayers
+            const backToCalendarButton = document.createElement('button');
+            backToCalendarButton.id = 'back-to-calendar-from-list-button'; // Added ID for styling
+            backToCalendarButton.textContent = 'Back to Calendar';
+            backToCalendarButton.className = 'action-button'; // Use existing action-button class
+            backToCalendarButton.addEventListener('click', () => {
+                recalledPrayerListContainer.style.display = 'none';
+                recalledPrayerContainer.style.display = 'none'; // Ensure single prayer view is also hidden
+                calendarContainer.style.display = 'block';
+            });
+            // Append it after the list, within the same container
+            recalledPrayerListContainer.appendChild(backToCalendarButton);
+
         }
         recalledPrayerListContainer.style.display = 'block';
         recalledPrayerContainer.style.display = 'none'; // Hide single prayer view initially
