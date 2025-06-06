@@ -74,8 +74,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const playAudioBtn = document.getElementById('playAudioBtn');
     const pauseAudioBtn = document.getElementById('pauseAudioBtn');
     const stopAudioBtn = document.getElementById('stopAudioBtn');
-    const currentReadingTextDiv = document.getElementById('currentReadingText');
-    const googleTtsAudioPlayer = document.getElementById('googleTtsAudioPlayer'); // Player for Google TTS
 
     // Scripture Modal UI Elements (assuming they are in index.html)
     const scriptureModal = document.getElementById('scripture-modal');
@@ -979,13 +977,20 @@ document.addEventListener('DOMContentLoaded', () => {
     let utteranceQueue = [];
     let isSpeaking = false;
     let currentUtteranceIndex = 0;
-    let timeoutId; // To store the timeout for pauses
+    let timeoutId = null; // To store the timeout for pauses
+
+    // UI Elements - currentReadingTextDiv was potentially missed in the top declarations if it's still needed globally
+    // For now, assuming it's mainly used within audio functions. If not, move its declaration to the top.
+    const currentReadingTextDiv = document.getElementById('currentReadingText');
+    let googleTtsAudioPlayer = new Audio(); // Use a programmatic Audio object
+
+    console.log("playAudioBtn element found:", playAudioBtn); // Debug line
 
     function speakText(textToSpeak, onEndCallback) {
         if (!textToSpeak || textToSpeak.trim() === '') {
-             console.warn("Attempted to speak empty text.");
-             if (onEndCallback) onEndCallback(); // Call callback immediately
-             return;
+            console.warn("Attempted to speak empty text.");
+            if (onEndCallback) onEndCallback(); // Call callback immediately
+            return;
         }
 
         if (currentReadingTextDiv) currentReadingTextDiv.textContent = `Synthesizing: "${textToSpeak.substring(0, 100)}..."`;
@@ -1153,18 +1158,39 @@ document.addEventListener('DOMContentLoaded', () => {
         // Audio Control Listeners
         if (playAudioBtn) {
             playAudioBtn.addEventListener('click', () => {
-                buildPrayerAudioQueue(); // Build the queue from current content
-                if (utteranceQueue.length > 0) {
-                    playAudioBtn.style.display = 'none';
+                console.log("Play button clicked!");
+
+                buildPrayerAudioQueue(); // Ensure queue is fresh
+
+                // Check the current state of variables
+                console.log("isSpeaking:", isSpeaking);
+                console.log("utteranceQueue.length:", utteranceQueue.length);
+                console.log("googleTtsAudioPlayer.paused:", googleTtsAudioPlayer.paused);
+
+                if (!isSpeaking && utteranceQueue.length > 0) {
+                    console.log("Condition 1 met: Starting new playback.");
+                    isSpeaking = true;
+                    if (playAudioBtn) playAudioBtn.style.display = 'none';
                     if (pauseAudioBtn) pauseAudioBtn.style.display = 'inline-block';
                     if (stopAudioBtn) stopAudioBtn.style.display = 'inline-block';
-                    processQueue(); // Start processing the queue
+                    currentUtteranceIndex = 0; // Reset for a new playback session
+                    processQueue(); // Use processQueue to handle the sequence
+                } else if (isSpeaking && googleTtsAudioPlayer.paused) {
+                    console.log("Condition 2 met: Resuming playback.");
+                    googleTtsAudioPlayer.play().catch(e => console.error("Error resuming audio:", e));
+                    if (pauseAudioBtn) pauseAudioBtn.textContent = 'Pause';
                 } else {
-                    if (currentReadingTextDiv) currentReadingTextDiv.textContent = "Nothing to read.";
+                    console.log("No playback condition met. Current state:");
+                    console.log("isSpeaking:", isSpeaking);
+                    console.log("utteranceQueue.length:", utteranceQueue.length);
+                    if (utteranceQueue.length === 0) {
+                        console.log("Utterance queue is empty. No text to play.");
+                        if (currentReadingTextDiv) currentReadingTextDiv.textContent = "Nothing to read.";
+                    }
                 }
             });
-             // Initially disable play button until prayer is loaded
-             playAudioBtn.disabled = true;
+            // Initially disable play button until prayer is loaded
+            playAudioBtn.disabled = true;
         }
         if (pauseAudioBtn) {
             pauseAudioBtn.addEventListener('click', () => {
