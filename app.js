@@ -1012,7 +1012,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (currentReadingTextDiv) currentReadingTextDiv.textContent = `Synthesizing: "${textToSpeak.substring(0, 100)}..."`;
         isSpeaking = true;
 
-        // const BACKEND_TTS_URL = ' https://us-central1-method25.cloudfunctions.net/method25-tts-proxy/'; // URL of deployed backend service - Moved to top
+        const BACKEND_TTS_URL = 'https://us-central1-method25.cloudfunctions.net/method25-tts-proxy/synthesize-speech'; // URL of deployed backend service - Moved to top
 
         // Call your backend service
         fetch(BACKEND_TTS_URL, {
