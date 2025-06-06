@@ -62,7 +62,11 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentCalendarDate = new Date(); // For calendar navigation
 
     // Settings Modal UI Elements
+    // ADD THIS console.log:
+    console.log("DEBUG: Before getting settings-button. document.getElementById('settings-button') will be called.");
     const settingsButton = document.getElementById('settings-button');
+    // ADD THIS console.log:
+    console.log("DEBUG: After getting settings-button. settingsButton is:", settingsButton);
     const settingsModal = document.getElementById('settings-modal');
     const closeSettingsModalButton = document.getElementById('close-settings-modal-button');
     const categorySettingsList = document.getElementById('category-settings-list');
@@ -70,7 +74,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const cancelSettingsButton = document.getElementById('cancel-settings-button');
 
     // Audio Controls UI Elements
+    // ADD THIS console.log:
+    console.log("DEBUG: Before getting audio-controls. document.getElementById('audio-controls') will be called.");
     const audioControlsContainer = document.getElementById('audio-controls');
+    // ADD THIS console.log:
+    console.log("DEBUG: After getting audio-controls. audioControlsContainer is:", audioControlsContainer);
     const playAudioBtn = document.getElementById('playAudioBtn');
     const pauseAudioBtn = document.getElementById('pauseAudioBtn');
     const stopAudioBtn = document.getElementById('stopAudioBtn');
@@ -510,7 +518,11 @@ document.addEventListener('DOMContentLoaded', () => {
             logoutButton.style.display = 'inline-block';
             savePrayerButton.style.display = 'block'; // Make save button block to take full width
             mySavedPrayersHeading.style.display = 'block';
+            // ADD THIS console.log, right before line 526 in your code:
+            console.log("DEBUG: Inside onAuthStateChanged (user logged in). Before line 526. settingsButton:", settingsButton);
             if(settingsButton) settingsButton.style.display = 'inline-block'; // Show settings button
+            // ADD THIS console.log, right before line 527 in your code:
+            console.log("DEBUG: Inside onAuthStateChanged (user logged in). Before line 527. audioControlsContainer:", audioControlsContainer);
             if(audioControlsContainer) audioControlsContainer.style.display = 'block'; // Show audio controls
             savedPrayersSection.style.display = 'block'; // Show the whole section
             calendarContainer.style.display = 'block'; // Show calendar by default
@@ -525,7 +537,11 @@ document.addEventListener('DOMContentLoaded', () => {
             savePrayerButton.style.display = 'none';
             viewCalendarButton.style.display = 'none';
             calendarContainer.style.display = 'none';
+            // ADD THIS console.log:
+            console.log("DEBUG: Inside onAuthStateChanged (user NOT logged in). Before settingsButton.style.display. settingsButton:", settingsButton);
             if(settingsButton) settingsButton.style.display = 'none'; // Hide settings button
+            // ADD THIS console.log:
+            console.log("DEBUG: Inside onAuthStateChanged (user NOT logged in). Before audioControlsContainer.style.display. audioControlsContainer:", audioControlsContainer);
             if(audioControlsContainer) audioControlsContainer.style.display = 'none'; // Hide audio controls
             recalledPrayerContainer.style.display = 'none';
             recalledPrayerListContainer.style.display = 'none';
@@ -1324,3 +1340,84 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+document.addEventListener('DOMContentLoaded', () => {
+    console.log("PWA App Started");
+
+    // ... (Your other code) ...
+
+    // Settings Modal UI Elements
+    // ADD THIS console.log:
+    console.log("DEBUG: Before getting settings-button. document.getElementById('settings-button') will be called.");
+    const settingsButton = document.getElementById('settings-button');
+    // ADD THIS console.log:
+    console.log("DEBUG: After getting settings-button. settingsButton is:", settingsButton);
+
+
+    const settingsModal = document.getElementById('settings-modal');
+    const closeSettingsModalButton = document.getElementById('close-settings-modal-button');
+    const categorySettingsList = document.getElementById('category-settings-list');
+    const saveSettingsButton = document.getElementById('save-settings-button');
+    const cancelSettingsButton = document.getElementById('cancel-settings-button');
+
+    // Audio Controls UI Elements
+    // ADD THIS console.log:
+    console.log("DEBUG: Before getting audio-controls. document.getElementById('audio-controls') will be called.");
+    const audioControlsContainer = document.getElementById('audio-controls');
+    // ADD THIS console.log:
+    console.log("DEBUG: After getting audio-controls. audioControlsContainer is:", audioControlsContainer);
+
+    const playAudioBtn = document.getElementById('playAudioBtn');
+    const pauseAudioBtn = document.getElementById('pauseAudioBtn');
+    const stopAudioBtn = document.getElementById('stopAudioBtn');
+
+    // ... (Your other code) ...
+
+    auth.onAuthStateChanged(user => {
+        currentUser = user;
+        if (user) {
+            userStatus.textContent = `Logged in as ${user.displayName || user.email}`;
+            loginButton.style.display = 'none';
+            if (loginPromptMessage) {
+                loginPromptMessage.textContent = ''; // Clear the prompt message text
+                loginPromptMessage.style.display = 'none'; // Hide prompt when logged in
+            }
+            logoutButton.style.display = 'inline-block';
+            savePrayerButton.style.display = 'block'; // Make save button block to take full width
+            mySavedPrayersHeading.style.display = 'block';
+
+            // ADD THIS console.log, right before line 526 in your code:
+            console.log("DEBUG: Inside onAuthStateChanged (user logged in). Before line 526. settingsButton:", settingsButton);
+            if(settingsButton) settingsButton.style.display = 'inline-block'; // Show settings button
+            // ADD THIS console.log, right before line 527 in your code:
+            console.log("DEBUG: Inside onAuthStateChanged (user logged in). Before line 527. audioControlsContainer:", audioControlsContainer);
+            if(audioControlsContainer) audioControlsContainer.style.display = 'block'; // Show audio controls
+            savedPrayersSection.style.display = 'block'; // Show the whole section
+            calendarContainer.style.display = 'block'; // Show calendar by default
+        } else {
+            userStatus.textContent = 'Not logged in.';
+            loginButton.style.display = 'inline-block';
+            if (loginPromptMessage) {
+                loginPromptMessage.textContent = "Login with your Google account to save prayers and customize your experience.";
+                loginPromptMessage.style.display = 'inline'; // Show prompt when not logged in
+            }
+            logoutButton.style.display = 'none';
+            savePrayerButton.style.display = 'none';
+            viewCalendarButton.style.display = 'none';
+            calendarContainer.style.display = 'none';
+
+            // ADD THIS console.log:
+            console.log("DEBUG: Inside onAuthStateChanged (user NOT logged in). Before settingsButton.style.display. settingsButton:", settingsButton);
+            if(settingsButton) settingsButton.style.display = 'none'; // Hide settings button
+            // ADD THIS console.log:
+            console.log("DEBUG: Inside onAuthStateChanged (user NOT logged in). Before audioControlsContainer.style.display. audioControlsContainer:", audioControlsContainer);
+            if(audioControlsContainer) audioControlsContainer.style.display = 'none'; // Hide audio controls
+            recalledPrayerContainer.style.display = 'none';
+            recalledPrayerListContainer.style.display = 'none';
+            calendarGrid.innerHTML = ''; // Clear calendar grid
+            currentMonthYearDisplay.textContent = 'Month Year'; // Reset calendar header
+        }
+    });
+
+    // ... (Rest of your code) ...
+
+}); // End of DOMContentLoaded
