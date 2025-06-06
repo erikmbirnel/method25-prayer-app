@@ -76,7 +76,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const stopAudioBtn = document.getElementById('stopAudioBtn');
     const currentReadingTextDiv = document.getElementById('currentReadingText');
     const googleTtsAudioPlayer = document.getElementById('googleTtsAudioPlayer'); // Player for Google TTS
-    const GOOGLE_TTS_API_KEY = 'AIzaSyDrZq2m6ZJBN3DXC_nzsOCHZL2zOVBtJpg'; // YOUR_API_KEY - Stored here for example, see security warning
 
     // Scripture Modal UI Elements (assuming they are in index.html)
     const scriptureModal = document.getElementById('scripture-modal');
@@ -989,25 +988,22 @@ document.addEventListener('DOMContentLoaded', () => {
              return;
         }
 
-        const requestBody = {
-            input: { text: textToSpeak },
-            voice: { languageCode: 'en-US', name: 'en-US-Wavenet-D' }, // Example voice, choose as needed
-            audioConfig: { audioEncoding: 'MP3' }
-        };
-
         if (currentReadingTextDiv) currentReadingTextDiv.textContent = `Synthesizing: "${textToSpeak.substring(0, 100)}..."`;
         isSpeaking = true;
 
-        fetch(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${GOOGLE_TTS_API_KEY}`, {
+        // const BACKEND_TTS_URL = ' https://us-central1-method25.cloudfunctions.net/method25-tts-proxy/'; // URL of deployed backend service - Moved to top
+
+        // Call your backend service
+        fetch(BACKEND_TTS_URL, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(requestBody)
+            body: JSON.stringify({ text: textToSpeak }) // Send text in the request body
         })
         .then(response => {
             if (!response.ok) {
-                return response.json().then(err => { throw new Error(`Google TTS API error: ${response.status} - ${err.error.message || response.statusText}`); });
+                return response.json().then(err => { throw new Error(`Backend TTS error: ${response.status} - ${err.error || err.message || response.statusText}`); });
             }
             return response.json();
         })
@@ -1027,11 +1023,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (onEndCallback) onEndCallback();
                 };
             } else {
-                throw new Error("No audio content received from Google TTS API.");
+                throw new Error("No audio content received from backend.");
             }
         })
         .catch(error => {
-            console.error('Google TTS API request or playback failed:', error);
+            console.error('Backend TTS request or playback failed:', error);
             if (currentReadingTextDiv) currentReadingTextDiv.textContent = `Error: Could not play audio.`;
             isSpeaking = false;
             if (onEndCallback) onEndCallback();
