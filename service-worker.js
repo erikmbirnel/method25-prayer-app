@@ -1,4 +1,4 @@
-const CACHE_NAME = 'prayer-app-cache-v3'; // <-- Increment to v3 (or higher if you've incremented before)
+const CACHE_NAME = 'prayer-app-cache-v4'; // <-- Increment to v3 (or higher if you've incremented before)
 const urlsToCache = [
     '/',
     '/index.html',
@@ -7,7 +7,8 @@ const urlsToCache = [
     '/manifest.json',
     '/icons/icon-192.png',
     '/icons/icon-512.png',
-    '/data/outcome.json' // Cache the prayer prompts
+    '/data/outcome.json', 
+    '/sounds/bell.mp3' // Cache the prayer prompts
 ];
 
 self.addEventListener('install', event => {

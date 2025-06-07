@@ -82,6 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const playAudioBtn = document.getElementById('playAudioBtn');
     const pauseAudioBtn = document.getElementById('pauseAudioBtn');
     const stopAudioBtn = document.getElementById('stopAudioBtn');
+    const ttsStatusDiv = document.getElementById('tts-status'); // For TTS status messages
 
     // Scripture Modal UI Elements (assuming they are in index.html)
     const scriptureModal = document.getElementById('scripture-modal');
@@ -90,6 +91,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const closeScriptureModalButton = document.getElementById('close-scripture-modal-button');
 
     const ESV_API_TOKEN = '78cd4c38aea5c20fcc99a63529076bc602be3848'; // Your ESV API Token
+
+    // URL of your deployed Google Cloud TTS function
+    const BACKEND_TTS_URL = 'https://us-central1-method25.cloudfunctions.net/method25-tts-proxy/synthesize-speech';
 
     // --- Crypto Helper Functions ---
     const ENCRYPTION_KEY_NAME = 'prayerAppEncryptionKey_v1'; // Added versioning to key name
@@ -995,24 +999,32 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentUtteranceIndex = 0;
     let timeoutId = null; // To store the timeout for pauses
 
-    // UI Elements - currentReadingTextDiv was potentially missed in the top declarations if it's still needed globally
-    // For now, assuming it's mainly used within audio functions. If not, move its declaration to the top.
+    // UI Element for displaying the text being read
     const currentReadingTextDiv = document.getElementById('currentReadingText');
     let googleTtsAudioPlayer = new Audio(); // Use a programmatic Audio object
+    const bellSoundPlayer = new Audio('sounds/bell.mp3'); // Pre-load bell sound
 
     console.log("playAudioBtn element found:", playAudioBtn); // Debug line
+
+    // Function to update TTS status message
+    function updateTtsStatus(message, isError = false) {
+        if (ttsStatusDiv) {
+            ttsStatusDiv.textContent = message;
+            ttsStatusDiv.className = isError ? 'tts-status-message error-message' : 'tts-status-message';
+        }
+    }
 
     function speakText(textToSpeak, onEndCallback) {
         if (!textToSpeak || textToSpeak.trim() === '') {
             console.warn("Attempted to speak empty text.");
+            updateTtsStatus("Nothing to speak.", false);
+            if (currentReadingTextDiv) currentReadingTextDiv.textContent = "";
             if (onEndCallback) onEndCallback(); // Call callback immediately
             return;
         }
-
-        if (currentReadingTextDiv) currentReadingTextDiv.textContent = `Synthesizing: "${textToSpeak.substring(0, 100)}..."`;
+        updateTtsStatus("Synthesizing audio...", false);
+        if (currentReadingTextDiv) currentReadingTextDiv.textContent = `"${textToSpeak.substring(0, 150)}..."`;
         isSpeaking = true;
-
-        const BACKEND_TTS_URL = 'https://us-central1-method25.cloudfunctions.net/method25-tts-proxy/synthesize-speech'; // URL of deployed backend service - Moved to top
 
         // Call your backend service
         fetch(BACKEND_TTS_URL, {
@@ -1030,26 +1042,29 @@ document.addEventListener('DOMContentLoaded', () => {
         })
         .then(data => {
             if (data.audioContent && googleTtsAudioPlayer) {
-                if (currentReadingTextDiv) currentReadingTextDiv.textContent = `Reading: "${textToSpeak.substring(0, 100)}..."`;
+                updateTtsStatus("Playing...", false);
+                // currentReadingTextDiv already set
                 googleTtsAudioPlayer.src = `data:audio/mp3;base64,${data.audioContent}`;
                 googleTtsAudioPlayer.play()
                     .catch(e => {
                         console.error("Error playing audio:", e);
+                        updateTtsStatus(`Error playing audio: ${e.message}`, true);
                         isSpeaking = false;
                         if (onEndCallback) onEndCallback();
                     });
 
                 googleTtsAudioPlayer.onended = () => {
+                    updateTtsStatus("Finished segment.", false);
                     isSpeaking = false;
                     if (onEndCallback) onEndCallback();
                 };
             } else {
-                throw new Error("No audio content received from backend.");
+                throw new Error("No audio content received.");
             }
         })
         .catch(error => {
             console.error('Backend TTS request or playback failed:', error);
-            if (currentReadingTextDiv) currentReadingTextDiv.textContent = `Error: Could not play audio.`;
+            updateTtsStatus(`Error: ${error.message}`, true);
             isSpeaking = false;
             if (onEndCallback) onEndCallback();
         });
@@ -1057,7 +1072,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function processQueue() {
         if (!googleTtsAudioPlayer) {
-            console.error("Audio player element not found.");
+            console.error("Audio player object not available.");
             stopAudioPlayback(); // Stop if player is missing
             return;
         }
@@ -1069,16 +1084,39 @@ document.addEventListener('DOMContentLoaded', () => {
                     processQueue(); // Move to the next item after speaking
                 });
             } else if (item.type === 'pause') {
-                if (currentReadingTextDiv) currentReadingTextDiv.textContent = `Pausing for ${item.duration / 1000} seconds...`;
+                updateTtsStatus(`Pausing for ${item.duration / 1000} seconds...`, false);
+                if (currentReadingTextDiv) currentReadingTextDiv.textContent = ""; // Clear current text during pause
                 clearTimeout(timeoutId); // Clear any existing timeout
+
                 timeoutId = setTimeout(() => {
-                    currentUtteranceIndex++;
-                    processQueue(); // Move to the next item after pause
+                    // Play bell sound after pause, before next speech
+                    updateTtsStatus("Transition sound...", false);
+                    bellSoundPlayer.currentTime = 0; // Ensure it plays from the beginning
+
+                    bellSoundPlayer.onended = () => {
+                        currentUtteranceIndex++;
+                        processQueue(); // Move to the next item after bell
+                    };
+                    bellSoundPlayer.onerror = (e) => {
+                        console.error("Error playing bell sound:", e);
+                        updateTtsStatus("Error playing transition sound.", true);
+                        currentUtteranceIndex++; // Still proceed
+                        processQueue();
+                    };
+
+                    bellSoundPlayer.play().catch(e => { // Catch initial play error if any
+                        console.error("Error initiating bell sound play:", e);
+                        updateTtsStatus("Error playing transition sound.", true);
+                        currentUtteranceIndex++; // Still proceed
+                        processQueue();
+                    });
+
                 }, item.duration);
             }
         } else {
             // End of sequence
             stopAudioPlayback(); // Use the stop function to reset UI
+            updateTtsStatus("Finished all prayers.", false);
         }
     }
 
@@ -1201,7 +1239,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     console.log("utteranceQueue.length:", utteranceQueue.length);
                     if (utteranceQueue.length === 0) {
                         console.log("Utterance queue is empty. No text to play.");
-                        if (currentReadingTextDiv) currentReadingTextDiv.textContent = "Nothing to read.";
+                        updateTtsStatus("Nothing to read.", false);
+                        if (currentReadingTextDiv) currentReadingTextDiv.textContent = "";
                     }
                 }
             });
@@ -1212,12 +1251,14 @@ document.addEventListener('DOMContentLoaded', () => {
             pauseAudioBtn.addEventListener('click', () => {
                 if (googleTtsAudioPlayer && !googleTtsAudioPlayer.paused && isSpeaking) {
                     googleTtsAudioPlayer.pause();
+                    updateTtsStatus("Paused.", false);
                     clearTimeout(timeoutId); // Pause any active timeout
                     pauseAudioBtn.textContent = 'Resume';
                 } else if (googleTtsAudioPlayer && googleTtsAudioPlayer.paused && isSpeaking) {
+                    updateTtsStatus("Resuming...", false);
                     googleTtsAudioPlayer.play().catch(e => console.error("Error resuming audio:", e));
                     // If resuming a timed pause, processQueue will handle the next step after timeout
-                    // If resuming speech, it will continue.
+                    // If resuming speech, speakText will update status.
                     if (pauseAudioBtn) pauseAudioBtn.textContent = 'Pause';
                 }
             });
@@ -1265,7 +1306,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const referencesText = `Scripture references: ${promptData.scripture_references.join(', ')}.`;
                     utteranceQueue.push({ type: 'speech', text: referencesText });
                 }
-                utteranceQueue.push({ type: 'pause', duration: 20000 }); // 20 seconds pause
+                utteranceQueue.push({ type: 'pause', duration: 10000 }); // 10 seconds pause
             }
         });
     }
@@ -1320,7 +1361,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (playAudioBtn) playAudioBtn.style.display = 'inline-block';
         if (pauseAudioBtn) { pauseAudioBtn.style.display = 'none'; pauseAudioBtn.textContent = 'Pause'; }
         if (stopAudioBtn) stopAudioBtn.style.display = 'none';
-        if (currentReadingTextDiv) currentReadingTextDiv.textContent = '';
+        if (currentReadingTextDiv) currentReadingTextDiv.textContent = "";
+        updateTtsStatus("Playback stopped.", false);
     }
     // Initial render of the calendar if user is already logged in on page load
     auth.onAuthStateChanged(user => {

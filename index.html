@@ -53,9 +53,9 @@
         <button id="playAudioBtn" class="action-button">Listen and Pray</button>
         <button id="pauseAudioBtn" class="action-button" style="display:none;">Pause</button>
         <button id="stopAudioBtn" class="action-button" style="display:none;">Stop</button>
-        <div id="currentReadingText" style="margin-top: 10px; font-style: italic; color: #555;"></div>
+        <div id="tts-status" class="tts-status-message" style="margin-top: 8px; font-size: 0.9em; color: #333;"></div> <!-- For TTS status messages -->
+        <div id="currentReadingText" style="margin-top: 5px; font-style: italic; color: #555;"></div> <!-- For the text being read -->
     </div>
-    <audio id="googleTtsAudioPlayer" style="display: none;"></audio> <!-- Hidden audio player for Google TTS -->
     <div id="prayer-actions-container" style="margin-top: 20px;">
         <button id="generate-all-button" class="action-button primary-action">Refresh Full Prayer</button>
         <div id="secondary-actions-container" style="margin-top: 10px; display: flex; justify-content: space-between;">
