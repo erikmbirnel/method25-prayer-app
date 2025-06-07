@@ -1212,8 +1212,6 @@ document.addEventListener('DOMContentLoaded', () => {
         // Audio Control Listeners
         if (playAudioBtn) {
             playAudioBtn.addEventListener('click', () => {
-                console.log("Play button clicked!");
-
                 buildPrayerAudioQueue(); // Ensure queue is fresh
 
                 // Check the current state of variables
@@ -1221,6 +1219,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.log("utteranceQueue.length:", utteranceQueue.length);
                 console.log("googleTtsAudioPlayer.paused:", googleTtsAudioPlayer.paused);
 
+                console.log("Play button clicked!"); // Moved log here for clarity
                 if (!isSpeaking && utteranceQueue.length > 0) {
                     console.log("Condition 1 met: Starting new playback.");
                     isSpeaking = true;
@@ -1244,8 +1243,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
             });
-            // Initially disable play button until prayer is loaded
-            playAudioBtn.disabled = true;
+            // displayFullPrayer() will enable the button when content is ready.
         }
         if (pauseAudioBtn) {
             pauseAudioBtn.addEventListener('click', () => {
@@ -1303,7 +1301,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 utteranceQueue.push({ type: 'speech', text: promptData.prompt });
 
                 if (promptData.scripture_references && promptData.scripture_references.length > 0) {
-                    const referencesText = `Scripture references: ${promptData.scripture_references.join(', ')}.`;
+                    const referencesText = `${promptData.scripture_references.join(', ')}.`;
                     utteranceQueue.push({ type: 'speech', text: referencesText });
                 }
                 utteranceQueue.push({ type: 'pause', duration: 10000 }); // 10 seconds pause
