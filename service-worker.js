@@ -1,10 +1,10 @@
-const CACHE_NAME = 'prayer-app-cache-v4'; // <-- Increment to v3 (or higher if you've incremented before)
+const CACHE_NAME = 'prayer-app-cache-v5'; // Increment cache version for manifest changes
 const urlsToCache = [
     '/',
     '/index.html',
     '/style.css',
     '/app.js',
-    '/manifest.json',
+    '/manifest.json', // Ensure manifest is cached
     '/icons/icon-192.png',
     '/icons/icon-512.png',
     '/data/outcome.json', 

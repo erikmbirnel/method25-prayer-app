@@ -432,3 +432,12 @@ h1 {
 #stopAudioBtn {
     background-color: #f44336; /* Red */
 }
+
+#prayer-method-subheader {
+    text-align: center;
+    font-size: 1.1em; /* Or your preferred size */
+    color: #444;      /* Or your preferred color */
+    margin-top: 15px;
+    margin-bottom: 15px;
+    font-weight: normal; /* Optional: if you want it less bold than a default h2 */
+}

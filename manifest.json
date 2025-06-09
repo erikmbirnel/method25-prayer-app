@@ -1,21 +1,21 @@
 {
-    "name": "A Method for Prayer by Matthew Henry",
-    "short_name": "Method Prayer",
-    "start_url": ".",
-    "display": "standalone",
-    "background_color": "#ffffff",
-    "theme_color": "#0056b3",
-    "description": "A personal prayer application based on 'A Method for Prayer'.",
-    "icons": [
-        {
-            "src": "icons/icon-192.png",
-            "sizes": "192x192",
-            "type": "image/png"
-        },
-        {
-            "src": "icons/icon-512.png",
-            "sizes": "512x512",
-            "type": "image/png"
-        }
-    ]
+  "name": "Broken Altar: Scripture-guided Prayer",
+  "short_name": "Broken Altar",
+  "description": "Broken Altar: A scripture-guided prayer application.",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0056b3",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
 }
