@@ -7,6 +7,21 @@ body {
 
 h1 {
     color: #0056b3;
+    /* If you had specific styles for h1 you want to adapt for the banner, consider them here */
+}
+
+.app-banner-container {
+    text-align: center; /* Centers the SVG if its display is inline-block */
+    margin-bottom: 20px; /* Space below the banner */
+}
+
+#app-banner-svg {
+    width: 80%; /* Adjust as needed, e.g., 250px, 300px, or a percentage */
+    max-width: 350px; /* Prevent it from getting too large on desktop */
+    height: auto; /* Maintain aspect ratio */
+    display: block; /* Allows margin auto for centering */
+    margin-left: auto;
+    margin-right: auto;
 }
 
 #prayer-container {

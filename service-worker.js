@@ -1,4 +1,4 @@
-const CACHE_NAME = 'prayer-app-cache-v5'; // Increment cache version for manifest changes
+const CACHE_NAME = 'prayer-app-cache-v6'; // Increment cache version for new banner SVG
 const urlsToCache = [
     '/',
     '/index.html',
@@ -8,7 +8,8 @@ const urlsToCache = [
     '/icons/icon-192.png',
     '/icons/icon-512.png',
     '/data/outcome.json', 
-    '/sounds/bell.mp3' // Cache the prayer prompts
+    '/sounds/bell.mp3',
+    '/images/red_altar_banner.svg' // Cache the new banner
 ];
 
 self.addEventListener('install', event => {
