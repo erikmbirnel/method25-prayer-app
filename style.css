@@ -16,10 +16,10 @@ h1 {
 }
 
 #app-banner-svg {
-    width: 80%; /* Adjust as needed, e.g., 250px, 300px, or a percentage */
-    max-width: 350px; /* Prevent it from getting too large on desktop */
-    height: auto; /* Maintain aspect ratio */
-    display: block; /* Allows margin auto for centering */
+    width: 80%;       /* Adjust as needed, e.g., 250px, 300px, or a percentage */
+    max-width: 613px; /* Increased by ~175% (350px * 1.75 = 612.5px) */
+    height: auto;     /* Maintain aspect ratio */
+    display: block;   /* Allows margin auto for centering */
     margin-left: auto;
     margin-right: auto;
 }
