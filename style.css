@@ -17,7 +17,7 @@ h1 {
 
 #app-banner-svg {
     width: 80%;       /* Adjust as needed, e.g., 250px, 300px, or a percentage */
-    max-width: 613px; /* Increased by ~175% (350px * 1.75 = 612.5px) */
+    max-width: 800px; /* Increased by ~175% (350px * 1.75 = 612.5px) */
     height: auto;     /* Maintain aspect ratio */
     display: block;   /* Allows margin auto for centering */
     margin-left: auto;
@@ -455,4 +455,50 @@ h1 {
     margin-top: 15px;
     margin-bottom: 15px;
     font-weight: normal; /* Optional: if you want it less bold than a default h2 */
+}
+
+/* --- About Broken Altar Section --- */
+#about-broken-altar {
+  margin-top: 30px;    /* Space above this section */
+  margin-bottom: 30px; /* Space below this section, before copyright */
+  padding: 20px;
+  background-color: #ffffff; /* White background for the section */
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.07); /* Subtle shadow */
+  line-height: 1.6; /* Improve readability for paragraphs in this section */
+}
+
+#about-broken-altar h3 {
+  font-size: 1.6em;   /* Prominent heading size, adjust as needed to match "My Saved Prayers" look */
+  color: #0056b3;     /* Using the main theme color from h1 for this important section title */
+  margin-top: 0;
+  margin-bottom: 15px; /* Space after the heading */
+}
+
+#about-broken-altar p {
+  margin-bottom: 12px; /* Space between paragraphs */
+  color: #333;         /* Standard text color */
+}
+
+#about-broken-altar p:last-of-type { /* Target the last paragraph specifically */
+  margin-bottom: 0;
+}
+
+#about-broken-altar .poem-quote {
+  font-style: italic;
+  margin-top: 10px;
+  margin-bottom: 15px;
+  margin-left: 20px;   /* Indent the quote */
+  padding-left: 15px;
+  border-left: 3px solid #0056b3; /* Accent border using theme color */
+  color: #555;         /* Slightly lighter text for the quote */
+}
+
+#about-broken-altar .poem-quote p {
+  margin-bottom: 0; /* Remove default paragraph margin within the quote */
+}
+
+/* Ensure poem title "The Altar" is italicized if not already by <em> */
+#about-broken-altar em {
+  font-style: italic;
 }
