@@ -470,7 +470,7 @@ h1 {
 
 #about-broken-altar h3 {
   font-size: 1.6em;   /* Prominent heading size, adjust as needed to match "My Saved Prayers" look */
-  color: #0056b3;     /* Using the main theme color from h1 for this important section title */
+  color: #333;        /* Changed to black (consistent with body text) */
   margin-top: 0;
   margin-bottom: 15px; /* Space after the heading */
 }
