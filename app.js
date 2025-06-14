@@ -1477,6 +1477,21 @@ document.addEventListener('DOMContentLoaded', () => {
                     const referencesText = `${promptData.scripture_references.join(', ')}.`;
                     utteranceQueue.push({ type: 'speech', text: referencesText });
                 }
+
+                // Add category-specific concluding phrases for Method for Prayer mode
+                if (currentPrayerMode === 'method_for_prayer') {
+                    if (categoryName === "Adoration") {
+                        utteranceQueue.push({ type: 'speech', text: "Let us adore him." });
+                    } else if (categoryName === "Thanksgiving") {
+                        utteranceQueue.push({ type: 'speech', text: "Let us thank God." });
+                    } else if (categoryName === "Confession") {
+                        utteranceQueue.push({ type: 'speech', text: "Let us confess our sins." });
+                    } else if (categoryName === "Petition") {
+                        utteranceQueue.push({ type: 'speech', text: "Let us present our requests to God." });
+                    } else if (categoryName === "Intercession") {
+                        utteranceQueue.push({ type: 'speech', text: "Let us pray for others." });
+                    }
+                }
                 utteranceQueue.push({ type: 'pause', duration: 10000 }); // 10 seconds pause
             }
         });
