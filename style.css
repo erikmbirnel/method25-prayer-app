@@ -1,13 +1,48 @@
+:root {
+    --background-primary: #f4f4f4;
+    --background-secondary: #ffffff;
+    --background-tertiary: #f9f9f9;
+    --background-modal: #fefefe;
+    --background-banner: #F7F6F0; /* From SVG */
+
+    --text-primary: #333;
+    --text-secondary: #555;
+    --text-accent: #0056b3;
+    --text-on-button-primary: #ffffff;
+    --text-on-button-secondary: #ffffff;
+    --text-on-button-special: #ffffff;
+    --text-on-settings-button: #333;
+
+    --border-primary: #ccc;
+    --border-secondary: #eee;
+    --border-modal: #888;
+
+    --button-primary-bg: #3498db; /* Blue */
+    --button-primary-hover-bg: #2980b9;
+    --button-secondary-bg: #7f8c8d; /* Grey */
+    --button-secondary-hover-bg: #6c7a7b;
+    --button-special-red-bg: #C41E3A;
+    --button-special-red-hover-bg: #A01729;
+    --button-settings-bg: #f0f0f0;
+    --button-settings-hover-bg: #e0e0e0;
+    --button-play-bg: #333;
+    --button-play-hover-bg: #555;
+
+    --link-primary: #007bff;
+    --link-hover: #0056b3;
+
+    --highlight-green: #a0e0a0;
+    --highlight-yellow-border: #f1c40f;
+    --drag-handle-color: #aaa;
+    --subheader-color: #444;
+    --svg-banner-filter: none; /* No filter for light mode */
+}
+
 body {
     font-family: sans-serif;
     margin: 20px;
-    background-color: #f4f4f4;
-    color: #333;
-}
-
-h1 {
-    color: #0056b3;
-    /* If you had specific styles for h1 you want to adapt for the banner, consider them here */
+    background-color: var(--background-primary);
+    color: var(--text-primary);
 }
 
 .app-banner-container {
@@ -22,6 +57,7 @@ h1 {
     display: block;   /* Allows margin auto for centering */
     margin-left: auto;
     margin-right: auto;
+    filter: var(--svg-banner-filter);
 }
 
 #prayer-container {
@@ -37,7 +73,7 @@ h1 {
 .prayer-category-segment {
     margin-bottom: 15px;
     padding-bottom: 10px;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid var(--border-secondary);
 }
 .prayer-category-segment:last-child {
     border-bottom: none;
@@ -46,7 +82,7 @@ h1 {
 .prayer-category-segment h3 {
     margin-top: 0;
     margin-bottom: 5px;
-    color: #3498db; /* A pleasant blue */
+    color: var(--button-primary-bg); /* Use button blue for consistency */
 }
 .prayer-category-segment .prayer-text {
     line-height: 1.5;
@@ -54,8 +90,8 @@ h1 {
 
 /* --- General Button Styling --- */
 .action-button {
-    background-color: #5dade2; /* Default blue */
-    color: white;
+    background-color: var(--button-primary-bg); 
+    color: var(--text-on-button-primary);
     padding: 12px 18px;
     border: none;
     border-radius: 6px;
@@ -75,20 +111,20 @@ h1 {
 }
 
 .rerandomize-button {
-    background-color: #3498db; /* Blue */
+    background-color: var(--button-primary-bg);
     padding: 16px 25px; /* Increased padding */
     font-size: 1.1em;  /* Increased font-size */
 }
 .back-button {
-    background-color: #7f8c8d; /* Grey for back button */
+    background-color: var(--button-secondary-bg);
     padding: 16px 25px; /* Match rerandomize-button padding */
     font-size: 1.1em;  /* Match rerandomize-button font-size */
     margin-left: 10px; /* Space it from the refresh button */
 }
 .reflection-button {
-    background-color: #C41E3A; /* Red from SVG Altar */
+    background-color: var(--button-special-red-bg);
     padding: 16px 25px; /* Match rerandomize-button padding */
-    font-size: 1.1em;  /* Match rerandomize-button font-size */
+    font-size: 1.1em;
     margin-left: 10px; /* Space it from the back button */
 }
 
@@ -113,7 +149,7 @@ h1 {
 #generate-all-button.primary-action {
     display: block;
     width: 100%;
-    background-color: #3498db; /* Blue, same as rerandomize-button */
+    background-color: var(--button-primary-bg);
     padding: 24px; /* Increased padding */
     font-size: 1.2em;  /* Increased font-size */
     margin-top: 10px;
@@ -122,7 +158,7 @@ h1 {
 }
 
 #save-prayer-button.save-action {
-    background-color: #C41E3A; /* Red from SVG Altar */
+    background-color: var(--button-special-red-bg);
     /* Match the generate-all-button for size */
     padding: 24px;
     font-size: 1.2em;
@@ -130,43 +166,41 @@ h1 {
 }
 
 #view-calendar-button.view-saved-action {
-    background-color: #e67e22; /* Complementary Orange/Brown */
+    background-color: var(--button-secondary-bg); /* Using secondary for now, can be a new var */
     font-size: 1.1em;
 }
 
 /* --- Button Hover States --- */
 .rerandomize-button:hover:not(:disabled) {
-    background-color: #2980b9; /* Darker Blue */
+    background-color: var(--button-primary-hover-bg);
 }
 .back-button:hover:not(:disabled) {
-    background-color: #6c7a7b; /* Darker Grey */
+    background-color: var(--button-secondary-hover-bg);
 }
 .reflection-button:hover:not(:disabled) {
-    background-color: #A01729; /* Darker Red from SVG Altar stroke */
+    background-color: var(--button-special-red-hover-bg);
 }
 
 #generate-all-button.primary-action:hover:not(:disabled) {
-    background-color: #2980b9; /* Darker Blue, same as rerandomize-button hover */
+    background-color: var(--button-primary-hover-bg);
 }
 
 #save-prayer-button.save-action:hover:not(:disabled) {
-    background-color: #A01729; /* Darker Red from SVG Altar stroke */
+    background-color: var(--button-special-red-hover-bg);
 }
 
 #view-calendar-button.view-saved-action:hover:not(:disabled) {
-    background-color: #ca6f1e; /* Darker Orange/Brown */
+    background-color: var(--button-secondary-hover-bg); /* Using secondary for now */
 }
 
 /* --- Auth Area Styling --- */
 .auth-button { /* For login button specifically if it needs different base from action-button */
     padding: 8px 15px;
-    background-color: #3498db; /* Blue */
-    /* color: white; // Already handled by .action-button if it inherits */
+    background-color: var(--button-primary-bg);
 }
 #auth-container {
     margin-bottom: 20px;
     padding: 10px;
-    /* background-color: #f0f0f0; */ /* Removed to allow button to float right cleanly */
     border-radius: 5px;
     overflow: auto; /* To contain floated elements */
 }
@@ -180,7 +214,7 @@ h1 {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
     gap: 5px;
-    border: 1px solid #ccc;
+    border: 1px solid var(--border-primary);
     padding: 10px;
     max-width: 400px; /* Adjust as needed */
     margin: 0 auto;
@@ -189,12 +223,12 @@ h1 {
 .calendar-day {
     padding: 10px;
     text-align: center;
-    border: 1px solid #eee;
+    border: 1px solid var(--border-secondary);
     cursor: default;
 }
 
 .calendar-day.has-prayer {
-    background-color: #a0e0a0; /* Light green for days with prayers */
+    background-color: var(--highlight-green);
     cursor: pointer;
     font-weight: bold;
 }
@@ -210,10 +244,10 @@ h1 {
 }
 
 #recalled-prayer-container {
-    border: 1px solid #ccc;
+    border: 1px solid var(--border-primary);
     padding: 15px;
     margin-top: 20px;
-    background-color: #f9f9f9;
+    background-color: var(--background-tertiary);
 }
 
 #recalled-prayer-container h3 {
@@ -227,11 +261,11 @@ h1 {
 
 #recalled-prayer-list li {
     padding: 8px;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid var(--border-secondary);
     cursor: pointer;
 }
 #recalled-prayer-list li:hover {
-    background-color: #e9e9e9;
+    background-color: var(--background-primary); /* Use primary bg for hover */
 }
 
 .reflection-area { /* Container for textarea and its save button */
@@ -246,7 +280,7 @@ h1 {
     margin-top: 10px;
     margin-bottom: 10px;
     padding: 8px;
-    border: 1px solid #ccc;
+    border: 1px solid var(--border-primary);
     border-radius: 4px;
     font-family: sans-serif;
     font-size: 1em; /* Adjusted slightly for consistency */
@@ -255,7 +289,7 @@ h1 {
 
 .reflection-textarea.frozen {
     font-style: italic;
-    color: #0056b3; /* Blue text */
+    color: var(--text-accent);
     background-color: transparent; /* Make background transparent */
     border-color: transparent; /* Make border transparent */
     resize: none; /* Optional: prevent resizing when frozen */
@@ -270,16 +304,16 @@ h1 {
 }
 
 .saved-reflection {
-    background-color: #f9f9f9; /* Light grey background for saved reflections */
+    background-color: var(--background-tertiary);
     padding: 8px;
     margin-top: 5px;
-    border-left: 3px solid #f1c40f; /* Yellow accent border */
+    border-left: 3px solid var(--highlight-yellow-border);
     font-style: italic;
 }
 
 /* --- Close Recalled Prayer Button --- */
 #close-recalled-prayer-button {
-    background-color: #7f8c8d; /* Grey, similar to back-button or a neutral close color */
+    background-color: var(--button-secondary-bg);
     font-size: 1.1em; /* Match other prominent secondary buttons */
     display: block; /* Make it take full width of its container */
     width: 100%;
@@ -288,7 +322,7 @@ h1 {
 }
 
 #close-recalled-prayer-button:hover:not(:disabled) {
-    background-color: #6c7a7b; /* Darker Grey */
+    background-color: var(--button-secondary-hover-bg);
 }
 
 /* --- Back to Calendar from List Button --- */
@@ -301,12 +335,12 @@ h1 {
 }
 /* Add this to your style.css */
 .scripture-link {
-    color: #007bff;
+    color: var(--link-primary);
     text-decoration: underline;
     cursor: pointer;
 }
 .scripture-link:hover {
-    color: #0056b3;
+    color: var(--link-hover);
 }
 .scripture-references {
     font-style: italic;
@@ -326,11 +360,11 @@ h1 {
 }
 
 .modal-content {
-    background-color: #fefefe;
+    background-color: var(--background-modal);
     margin: 10% auto; /* 10% from the top and centered */
     padding: 20px;
-    border: 1px solid #888;
-    width: 80%; /* Could be more or less, depending on screen size */
+    border: 1px solid var(--border-modal);
+    width: 80%; 
     max-width: 600px;
     box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2),0 6px 20px 0 rgba(0,0,0,0.19);
     border-radius: 5px;
@@ -338,7 +372,7 @@ h1 {
 }
 
 .close-button {
-    color: #aaa;
+    color: var(--drag-handle-color); /* Use drag handle color for consistency */
     float: right;
     font-size: 28px;
     font-weight: bold;
@@ -349,7 +383,7 @@ h1 {
 
 .close-button:hover,
 .close-button:focus {
-    color: black;
+    color: var(--text-primary);
     text-decoration: none;
     cursor: pointer;
 }
@@ -364,7 +398,7 @@ h1 {
     font-style: italic;
     text-align: right;
     margin-top: 1em;
-    color: #777;
+    color: var(--text-secondary);
 }
 
 .external-context-link-container {
@@ -374,25 +408,24 @@ h1 {
 }
 
 .external-context-link-container a { /* Target the <a> tag within the container */
-    color: #007bff; /* Standard link blue */
+    color: var(--link-primary);
     text-decoration: underline;
 }
 .external-context-link-container a:hover {
-    color: #0056b3; /* Darker blue on hover */
+    color: var(--link-hover);
 }
 
 /* --- Settings Button --- */
 #settings-button {
-    background-color: #f0f0f0; /* Or match other action buttons if preferred */
-    /* Add other styles as needed, e.g., padding, border */
+    background-color: var(--button-settings-bg);
     border-radius: 5px;
-    color: #333; /* Text color for a lighter button */
+    color: var(--text-on-settings-button);
 }
 
 /* --- Settings Modal --- */
 #category-settings-list li {
     padding: 8px 5px;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid var(--border-secondary);
     display: flex;
     align-items: center;
 }
@@ -409,7 +442,7 @@ h1 {
 #category-settings-list .drag-handle { /* Placeholder for drag functionality */
     cursor: grab;
     margin-right: 10px;
-    color: #aaa;
+    color: var(--drag-handle-color);
 }
 
 #settings-modal .modal-content {
@@ -438,7 +471,7 @@ h1 {
 }
 
 #playAudioBtn {
-    background-color: #333; /* Dark grey */
+    background-color: var(--button-play-bg);
     display: block; /* Make it a block element */
     width: 100%; /* Make it take full width */
     padding: 24px; /* Match padding of save/generate buttons */
@@ -446,17 +479,17 @@ h1 {
 }
 
 #pauseAudioBtn {
-    background-color: #ff9800; /* Orange */
+    background-color: var(--button-secondary-bg); /* Using secondary, can be new var */
 }
 
 #stopAudioBtn {
-    background-color: #f44336; /* Red */
+    background-color: var(--button-special-red-bg);
 }
 
 #prayer-method-subheader {
     text-align: center;
     font-size: 1.1em; /* Or your preferred size */
-    color: #444;      /* Or your preferred color */
+    color: var(--subheader-color);
     margin-top: 15px;
     margin-bottom: 15px;
     font-weight: normal; /* Optional: if you want it less bold than a default h2 */
@@ -467,7 +500,7 @@ h1 {
   margin-top: 30px;    /* Space above this section */
   margin-bottom: 30px; /* Space below this section, before copyright */
   padding: 20px;
-  background-color: #ffffff; /* White background for the section */
+  background-color: var(--background-secondary);
   border-radius: 8px;
   box-shadow: 0 2px 10px rgba(0,0,0,0.07); /* Subtle shadow */
   line-height: 1.6; /* Improve readability for paragraphs in this section */
@@ -475,14 +508,14 @@ h1 {
 
 #about-broken-altar h3 {
   font-size: 1.6em;   /* Prominent heading size, adjust as needed to match "My Saved Prayers" look */
-  color: #333;        /* Changed to black (consistent with body text) */
+  color: var(--text-primary);
   margin-top: 0;
   margin-bottom: 15px; /* Space after the heading */
 }
 
 #about-broken-altar p {
   margin-bottom: 12px; /* Space between paragraphs */
-  color: #333;         /* Standard text color */
+  color: var(--text-primary);
 }
 
 #about-broken-altar p:last-of-type { /* Target the last paragraph specifically */
@@ -495,8 +528,8 @@ h1 {
   margin-bottom: 15px;
   margin-left: 20px;   /* Indent the quote */
   padding-left: 15px;
-  border-left: 3px solid #0056b3; /* Accent border using theme color */
-  color: #555;         /* Slightly lighter text for the quote */
+  border-left: 3px solid var(--text-accent);
+  color: var(--text-secondary);
 }
 
 #about-broken-altar .poem-quote p {
@@ -506,4 +539,49 @@ h1 {
 /* Ensure poem title "The Altar" is italicized if not already by <em> */
 #about-broken-altar em {
   font-style: italic;
+}
+
+/* Dark Mode Overrides */
+[data-theme="dark"] {
+    --background-primary: #1e1e1e;
+    --background-secondary: #2a2a2a;
+    --background-tertiary: #333333;
+    --background-modal: #383838;
+    --background-banner: #2a2a2a; /* Darker background for SVG if not using filter */
+
+    --text-primary: #e0e0e0;
+    --text-secondary: #b0b0b0;
+    --text-accent: #61dafb; /* Lighter blue for accent */
+    --text-on-button-primary: #e0e0e0;
+    --text-on-button-secondary: #e0e0e0;
+    --text-on-button-special: #e0e0e0;
+    --text-on-settings-button: #e0e0e0;
+
+    --border-primary: #555555;
+    --border-secondary: #444444;
+    --border-modal: #666666;
+
+    --button-primary-bg: #007bff; /* Brighter blue for dark mode */
+    --button-primary-hover-bg: #0056b3;
+    --button-secondary-bg: #5a6268; 
+    --button-secondary-hover-bg: #494f54;
+    --button-special-red-bg: #C41E3A; /* Red can often stay, or be slightly desaturated */
+    --button-special-red-hover-bg: #A01729;
+    --button-settings-bg: #4f4f4f;
+    --button-settings-hover-bg: #5a5a5a;
+    --button-play-bg: #555;
+    --button-play-hover-bg: #777;
+
+    --link-primary: #61dafb;
+    --link-hover: #82eaff;
+
+    --highlight-green: #3a703a; /* Darker green */
+    --highlight-yellow-border: #b8860b; /* Darker yellow */
+    --drag-handle-color: #888;
+    --subheader-color: #c0c0c0;
+
+    /* Example filter for the SVG banner in dark mode. This will need tuning. */
+    /* It tries to invert light areas and adjust colors. */
+    /* If the SVG background is #F7F6F0, this might make it dark. */
+    --svg-banner-filter: invert(0.95) hue-rotate(180deg) brightness(1.1) contrast(0.95);
 }

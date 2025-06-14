@@ -27,6 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const PAUSE_DURATION_KEY = 'prayerAppPauseDuration_v1'; // Key for localStorage for pause duration
     const PLAY_BELL_SOUND_KEY = 'prayerAppPlayBellSound_v1'; // Key for localStorage for bell sound preference
     const PRAYER_MODE_KEY = 'prayerAppMode_v1'; // Key for localStorage for prayer mode
+    const THEME_KEY = 'prayerAppTheme_v1'; // Key for localStorage for theme
     let currentPrayerMode = 'method_for_prayer'; // Default mode
     let allPromptsData = [];
     let groupedByCategory = {};
@@ -100,6 +101,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const pauseDurationValueDisplay = document.getElementById('pause-duration-value');
     const playBellSoundToggle = document.getElementById('play-bell-sound-toggle');
 
+    // Appearance Settings UI
+    const themeToggle = document.getElementById('theme-toggle');
+
     // Audio Controls UI Elements
     // ADD THIS console.log:
     console.log("DEBUG: Before getting audio-controls. document.getElementById('audio-controls') will be called.");
@@ -133,6 +137,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Audio Settings
     let userPauseDurationSeconds = 10; // Default pause duration in seconds, matches slider default
     let playBellSound = true; // Default to playing the bell sound
+    let currentTheme = 'light'; // Default theme
 
     // --- Crypto Helper Functions ---
     const ENCRYPTION_KEY_NAME = 'prayerAppEncryptionKey_v1'; // Added versioning to key name
@@ -970,6 +975,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (playBellSoundToggle) {
             playBellSoundToggle.checked = playBellSound;
         }
+        // Set theme toggle
+        if (themeToggle) {
+            themeToggle.checked = (currentTheme === 'dark');
+        }
     }
 
     function updateSettingsUIBasedOnModeSelection() {
@@ -1055,6 +1064,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (playBellSoundToggle) {
             playBellSound = playBellSoundToggle.checked;
             localStorage.setItem(PLAY_BELL_SOUND_KEY, JSON.stringify(playBellSound));
+        }
+        // Save theme preference
+        if (themeToggle) {
+            currentTheme = themeToggle.checked ? 'dark' : 'light';
+            localStorage.setItem(THEME_KEY, currentTheme);
+            applyTheme(currentTheme);
         }
 
 
@@ -1144,6 +1159,25 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error("Error loading bell sound setting from localStorage:", e);
             playBellSound = true; // Default
         }
+    }
+
+    function loadTheme() {
+        try {
+            const savedTheme = localStorage.getItem(THEME_KEY);
+            if (savedTheme === 'dark' || savedTheme === 'light') {
+                currentTheme = savedTheme;
+            }
+            console.log("User theme loaded:", currentTheme);
+            applyTheme(currentTheme); // Apply loaded theme immediately
+        } catch (e) {
+            console.error("Error loading theme from localStorage:", e);
+            currentTheme = 'light'; // Default
+            applyTheme(currentTheme);
+        }
+    }
+
+    function applyTheme(themeName) {
+        document.documentElement.setAttribute('data-theme', themeName);
     }
 
     function getActiveCategoriesForCurrentMode() {
@@ -1397,6 +1431,7 @@ document.addEventListener('DOMContentLoaded', () => {
         loadUserCategoryOrder(); // Load user category preferences for Method mode
         loadPauseDuration(); // Load user pause duration preference
         loadBellSoundSetting(); // Load user bell sound preference
+        loadTheme(); // Load and apply user theme preference
 
         await initializeAppCoreLogic(); // Then initialize core logic based on loaded settings
 
