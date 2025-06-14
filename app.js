@@ -24,6 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // User's current active and ordered list of categories
     let userPrayerCategoryOrder = [...METHOD_PRAYER_DEFAULT_CATEGORIES]; // Specifically for Method for Prayer mode
     const USER_CATEGORY_ORDER_KEY = 'prayerAppCategorySettings_v1'; // Key for localStorage for Method mode category order
+    const PAUSE_DURATION_KEY = 'prayerAppPauseDuration_v1'; // Key for localStorage for pause duration
     const PRAYER_MODE_KEY = 'prayerAppMode_v1'; // Key for localStorage for prayer mode
     let currentPrayerMode = 'method_for_prayer'; // Default mode
     let allPromptsData = [];
@@ -92,6 +93,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const prayerMethodSubheader = document.getElementById('prayer-method-subheader');
     let sortableInstance = null; // To hold the SortableJS instance
 
+    // Audio Playback Settings UI
+    const keepScreenAwakeToggle = document.getElementById('keep-screen-awake-toggle');
+    const pauseDurationSelect = document.getElementById('pause-duration-select');
+
     // Audio Controls UI Elements
     // ADD THIS console.log:
     console.log("DEBUG: Before getting audio-controls. document.getElementById('audio-controls') will be called.");
@@ -120,7 +125,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Screen Wake Lock
     let screenWakeLock = null;
-    const keepScreenAwakeToggle = document.getElementById('keep-screen-awake-toggle');
+    // const keepScreenAwakeToggle = document.getElementById('keep-screen-awake-toggle'); // Already defined above
+
+    // Audio Settings
+    let userPauseDurationSeconds = 10; // Default pause duration in seconds
 
     // --- Crypto Helper Functions ---
     const ENCRYPTION_KEY_NAME = 'prayerAppEncryptionKey_v1'; // Added versioning to key name
@@ -949,6 +957,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (prayerModeLordsPrayerRadio) { // Check if element exists
             prayerModeLordsPrayerRadio.checked = (currentPrayerMode === 'lords_prayer');
         }
+        // Set pause duration select
+        if (pauseDurationSelect) {
+            pauseDurationSelect.value = userPauseDurationSeconds.toString();
+        }
     }
 
     function updateSettingsUIBasedOnModeSelection() {
@@ -1024,6 +1036,12 @@ document.addEventListener('DOMContentLoaded', () => {
             localStorage.setItem(USER_CATEGORY_ORDER_KEY, JSON.stringify(userPrayerCategoryOrder));
         }
 
+        // Save pause duration
+        if (pauseDurationSelect) {
+            userPauseDurationSeconds = parseInt(pauseDurationSelect.value, 10) || 10; // Fallback to 10 if parsing fails
+            localStorage.setItem(PAUSE_DURATION_KEY, JSON.stringify(userPauseDurationSeconds));
+        }
+
         currentPrayerMode = newMode;
         localStorage.setItem(PRAYER_MODE_KEY, JSON.stringify(currentPrayerMode));
 
@@ -1083,6 +1101,21 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    function loadPauseDuration() {
+        try {
+            const savedDuration = localStorage.getItem(PAUSE_DURATION_KEY);
+            if (savedDuration) {
+                const parsedDuration = JSON.parse(savedDuration);
+                if (typeof parsedDuration === 'number' && parsedDuration >= 0) {
+                    userPauseDurationSeconds = parsedDuration;
+                }
+            }
+            console.log("User pause duration loaded:", userPauseDurationSeconds + "s");
+        } catch (e) {
+            console.error("Error loading pause duration from localStorage:", e);
+            userPauseDurationSeconds = 10; // Default
+        }
+    }
     function getActiveCategoriesForCurrentMode() {
         if (currentPrayerMode === 'method_for_prayer') {
             return userPrayerCategoryOrder.length > 0 ? userPrayerCategoryOrder : [...METHOD_PRAYER_DEFAULT_CATEGORIES];
@@ -1325,6 +1358,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function initializeApp() {
         loadPrayerMode(); // Load mode first
         loadUserCategoryOrder(); // Load user category preferences for Method mode
+        loadPauseDuration(); // Load user pause duration preference
 
         await initializeAppCoreLogic(); // Then initialize core logic based on loaded settings
 
@@ -1517,7 +1551,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         utteranceQueue.push({ type: 'speech', text: "Let us pray for others." });
                     }
                 }
-                utteranceQueue.push({ type: 'pause', duration: 10000 }); // 10 seconds pause
+                utteranceQueue.push({ type: 'pause', duration: userPauseDurationSeconds * 1000 }); // Use user-defined pause
             }
         });
     }

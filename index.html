@@ -68,6 +68,17 @@
                 <input type="checkbox" id="keep-screen-awake-toggle" name="keep-screen-awake">
                 <label for="keep-screen-awake-toggle">Keep screen awake during audio playback</label>
                 <p style="font-size: 0.8em; color: #666; margin-top: 5px;">(Note: Enabling this may consume more battery.)</p>
+
+                <div style="margin-top: 15px;">
+                    <label for="pause-duration-select">Pause between prayer segments:</label>
+                    <select id="pause-duration-select" name="pause-duration">
+                        <option value="5">5 seconds</option>
+                        <option value="10" selected>10 seconds (Default)</option>
+                        <option value="15">15 seconds</option>
+                        <option value="20">20 seconds</option>
+                        <option value="30">30 seconds</option>
+                    </select>
+                </div>
             </div>
 
             <button id="save-settings-button" class="action-button primary-action" style="margin-top: 20px;">Save Settings</button>
