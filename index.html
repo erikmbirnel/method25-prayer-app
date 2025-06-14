@@ -6,6 +6,7 @@
     <title>Broken Altar: Scripture-guided Prayer</title>
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#000000"> <!-- Added this line -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black">
     <meta name="apple-mobile-web-app-title" content="Broken Altar">
@@ -70,14 +71,16 @@
                 <p style="font-size: 0.8em; color: #666; margin-top: 5px;">(Note: Enabling this may consume more battery.)</p>
 
                 <div style="margin-top: 15px;">
-                    <label for="pause-duration-select">Pause between prayer segments:</label>
-                    <select id="pause-duration-select" name="pause-duration">
-                        <option value="5">5 seconds</option>
-                        <option value="10" selected>10 seconds (Default)</option>
-                        <option value="15">15 seconds</option>
-                        <option value="20">20 seconds</option>
-                        <option value="30">30 seconds</option>
-                    </select>
+                    <label for="pause-duration-slider">Pause between prayer segments: <span id="pause-duration-value">10</span> seconds</label>
+                    <input type="range" id="pause-duration-slider" name="pause-duration" min="0" max="60" value="10" step="1" style="width: 100%; margin-top: 5px;">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.8em; color: #666;">
+                        <span>0s</span><span>60s</span>
+                    </div>
+                </div>
+
+                <div style="margin-top: 15px;">
+                    <input type="checkbox" id="play-bell-sound-toggle" name="play-bell-sound" checked>
+                    <label for="play-bell-sound-toggle">Play bell sound between segments</label>
                 </div>
             </div>
 

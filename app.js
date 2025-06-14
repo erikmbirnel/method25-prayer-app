@@ -25,6 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let userPrayerCategoryOrder = [...METHOD_PRAYER_DEFAULT_CATEGORIES]; // Specifically for Method for Prayer mode
     const USER_CATEGORY_ORDER_KEY = 'prayerAppCategorySettings_v1'; // Key for localStorage for Method mode category order
     const PAUSE_DURATION_KEY = 'prayerAppPauseDuration_v1'; // Key for localStorage for pause duration
+    const PLAY_BELL_SOUND_KEY = 'prayerAppPlayBellSound_v1'; // Key for localStorage for bell sound preference
     const PRAYER_MODE_KEY = 'prayerAppMode_v1'; // Key for localStorage for prayer mode
     let currentPrayerMode = 'method_for_prayer'; // Default mode
     let allPromptsData = [];
@@ -95,7 +96,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Audio Playback Settings UI
     const keepScreenAwakeToggle = document.getElementById('keep-screen-awake-toggle');
-    const pauseDurationSelect = document.getElementById('pause-duration-select');
+    const pauseDurationSlider = document.getElementById('pause-duration-slider');
+    const pauseDurationValueDisplay = document.getElementById('pause-duration-value');
+    const playBellSoundToggle = document.getElementById('play-bell-sound-toggle');
 
     // Audio Controls UI Elements
     // ADD THIS console.log:
@@ -128,7 +131,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // const keepScreenAwakeToggle = document.getElementById('keep-screen-awake-toggle'); // Already defined above
 
     // Audio Settings
-    let userPauseDurationSeconds = 10; // Default pause duration in seconds
+    let userPauseDurationSeconds = 10; // Default pause duration in seconds, matches slider default
+    let playBellSound = true; // Default to playing the bell sound
 
     // --- Crypto Helper Functions ---
     const ENCRYPTION_KEY_NAME = 'prayerAppEncryptionKey_v1'; // Added versioning to key name
@@ -957,9 +961,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if (prayerModeLordsPrayerRadio) { // Check if element exists
             prayerModeLordsPrayerRadio.checked = (currentPrayerMode === 'lords_prayer');
         }
-        // Set pause duration select
-        if (pauseDurationSelect) {
-            pauseDurationSelect.value = userPauseDurationSeconds.toString();
+        // Set pause duration slider and display
+        if (pauseDurationSlider && pauseDurationValueDisplay) {
+            pauseDurationSlider.value = userPauseDurationSeconds.toString();
+            pauseDurationValueDisplay.textContent = userPauseDurationSeconds.toString();
+        }
+        // Set bell sound toggle
+        if (playBellSoundToggle) {
+            playBellSoundToggle.checked = playBellSound;
         }
     }
 
@@ -1037,10 +1046,17 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // Save pause duration
-        if (pauseDurationSelect) {
-            userPauseDurationSeconds = parseInt(pauseDurationSelect.value, 10) || 10; // Fallback to 10 if parsing fails
+        if (pauseDurationSlider) {
+            userPauseDurationSeconds = parseInt(pauseDurationSlider.value, 10);
             localStorage.setItem(PAUSE_DURATION_KEY, JSON.stringify(userPauseDurationSeconds));
+            if(pauseDurationValueDisplay) pauseDurationValueDisplay.textContent = userPauseDurationSeconds.toString();
         }
+        // Save bell sound preference
+        if (playBellSoundToggle) {
+            playBellSound = playBellSoundToggle.checked;
+            localStorage.setItem(PLAY_BELL_SOUND_KEY, JSON.stringify(playBellSound));
+        }
+
 
         currentPrayerMode = newMode;
         localStorage.setItem(PRAYER_MODE_KEY, JSON.stringify(currentPrayerMode));
@@ -1106,7 +1122,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const savedDuration = localStorage.getItem(PAUSE_DURATION_KEY);
             if (savedDuration) {
                 const parsedDuration = JSON.parse(savedDuration);
-                if (typeof parsedDuration === 'number' && parsedDuration >= 0) {
+                if (typeof parsedDuration === 'number' && parsedDuration >= 0 && parsedDuration <= 60) { // ensure it's within slider range
                     userPauseDurationSeconds = parsedDuration;
                 }
             }
@@ -1116,6 +1132,20 @@ document.addEventListener('DOMContentLoaded', () => {
             userPauseDurationSeconds = 10; // Default
         }
     }
+
+    function loadBellSoundSetting() {
+        try {
+            const savedBellSetting = localStorage.getItem(PLAY_BELL_SOUND_KEY);
+            if (savedBellSetting !== null) { // Check for null to distinguish from not set vs. explicitly false
+                playBellSound = JSON.parse(savedBellSetting);
+            }
+            console.log("User bell sound setting loaded:", playBellSound);
+        } catch (e) {
+            console.error("Error loading bell sound setting from localStorage:", e);
+            playBellSound = true; // Default
+        }
+    }
+
     function getActiveCategoriesForCurrentMode() {
         if (currentPrayerMode === 'method_for_prayer') {
             return userPrayerCategoryOrder.length > 0 ? userPrayerCategoryOrder : [...METHOD_PRAYER_DEFAULT_CATEGORIES];
@@ -1226,52 +1256,59 @@ document.addEventListener('DOMContentLoaded', () => {
                 clearTimeout(timeoutId); // Clear any existing timeout
 
                 timeoutId = setTimeout(() => {
-                    // Play bell sound after pause, before next speech
-                    updateTtsStatus("Playing transition sound...", false);
-                    bellSoundPlayer.currentTime = 0; // Ensure it plays from the beginning
+                    if (playBellSound) {
+                        // Play bell sound after pause, before next speech
+                        updateTtsStatus("Playing transition sound...", false);
+                        bellSoundPlayer.currentTime = 0; // Ensure it plays from the beginning
 
-                    let bellErrorHandled = false; // Flag to prevent double handling of errors
+                        let bellErrorHandled = false; // Flag to prevent double handling of errors
 
-                    // Clear previous handlers to ensure they don't stack if this logic is re-entered unexpectedly
-                    bellSoundPlayer.onended = null;
-                    bellSoundPlayer.onerror = null;
+                        // Clear previous handlers to ensure they don't stack if this logic is re-entered unexpectedly
+                        bellSoundPlayer.onended = null;
+                        bellSoundPlayer.onerror = null;
 
-                    bellSoundPlayer.onended = () => {
-                        if (bellErrorHandled) return; // If error was already handled, do nothing
-                        console.log("Bell sound finished.");
-                        updateTtsStatus("Transition finished.", false);
-                        currentUtteranceIndex++;
-                        processQueue(); // Move to the next item after bell
-                    };
+                        bellSoundPlayer.onended = () => {
+                            if (bellErrorHandled) return; // If error was already handled, do nothing
+                            console.log("Bell sound finished.");
+                            updateTtsStatus("Transition finished.", false);
+                            currentUtteranceIndex++;
+                            processQueue(); // Move to the next item after bell
+                        };
 
-                    bellSoundPlayer.onerror = (e) => {
-                        if (bellErrorHandled) return; // If error was already handled, do nothing
-                        bellErrorHandled = true;
-
-                        console.error("Bell sound general error event:", e);
-                        if (bellSoundPlayer.error) {
-                            console.error("Bell player error object:", bellSoundPlayer.error);
-                            updateTtsStatus(`Bell error: Code ${bellSoundPlayer.error.code}, Message: ${bellSoundPlayer.error.message}`, true);
-                        } else {
-                            updateTtsStatus("Bell error (unknown).", true);
-                        }
-                        currentUtteranceIndex++; // Still proceed
-                        processQueue();
-                    };
-
-                    bellSoundPlayer.play()
-                        .then(() => {
-                            console.log("Bell sound play() call initiated successfully.");
-                        })
-                        .catch(e => { // Catch initial play() promise rejection
-                            if (bellErrorHandled) return; // If error was already handled by onerror, do nothing
+                        bellSoundPlayer.onerror = (e) => {
+                            if (bellErrorHandled) return; // If error was already handled, do nothing
                             bellErrorHandled = true;
 
-                            console.error("Bell sound play() promise rejected:", e);
-                            updateTtsStatus(`Bell play error: ${e.message}`, true);
+                            console.error("Bell sound general error event:", e);
+                            if (bellSoundPlayer.error) {
+                                console.error("Bell player error object:", bellSoundPlayer.error);
+                                updateTtsStatus(`Bell error: Code ${bellSoundPlayer.error.code}, Message: ${bellSoundPlayer.error.message}`, true);
+                            } else {
+                                updateTtsStatus("Bell error (unknown).", true);
+                            }
                             currentUtteranceIndex++; // Still proceed
                             processQueue();
-                        });
+                        };
+
+                        bellSoundPlayer.play()
+                            .then(() => {
+                                console.log("Bell sound play() call initiated successfully.");
+                            })
+                            .catch(e => { // Catch initial play() promise rejection
+                                if (bellErrorHandled) return; // If error was already handled by onerror, do nothing
+                                bellErrorHandled = true;
+
+                                console.error("Bell sound play() promise rejected:", e);
+                                updateTtsStatus(`Bell play error: ${e.message}`, true);
+                                currentUtteranceIndex++; // Still proceed
+                                processQueue();
+                            });
+                    } else {
+                        // No bell sound, proceed directly to the next item
+                        console.log("Bell sound disabled by user setting.");
+                        currentUtteranceIndex++;
+                        processQueue();
+                    }
                 }, item.duration);
             }
         } else {
@@ -1359,6 +1396,7 @@ document.addEventListener('DOMContentLoaded', () => {
         loadPrayerMode(); // Load mode first
         loadUserCategoryOrder(); // Load user category preferences for Method mode
         loadPauseDuration(); // Load user pause duration preference
+        loadBellSoundSetting(); // Load user bell sound preference
 
         await initializeAppCoreLogic(); // Then initialize core logic based on loaded settings
 
@@ -1421,6 +1459,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (prayerModeLordsPrayerRadio) {
             prayerModeLordsPrayerRadio.addEventListener('change', updateSettingsUIBasedOnModeSelection);
             // Removed extraneous });
+        }
+        // Listener for pause duration slider
+        if (pauseDurationSlider && pauseDurationValueDisplay) {
+            pauseDurationSlider.addEventListener('input', () => {
+                pauseDurationValueDisplay.textContent = pauseDurationSlider.value;
+                // userPauseDurationSeconds is updated on save, not live, to prevent too many localStorage writes
+            });
         }
 
         // Audio Control Listeners
