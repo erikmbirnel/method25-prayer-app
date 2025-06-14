@@ -86,7 +86,7 @@ h1 {
     margin-left: 10px; /* Space it from the refresh button */
 }
 .reflection-button {
-    background-color: #f1c40f; /* Similar yellow to save-action */
+    background-color: #C41E3A; /* Red from SVG Altar */
     padding: 16px 25px; /* Match rerandomize-button padding */
     font-size: 1.1em;  /* Match rerandomize-button font-size */
     margin-left: 10px; /* Space it from the back button */
@@ -122,7 +122,7 @@ h1 {
 }
 
 #save-prayer-button.save-action {
-    background-color: #2ecc71; /* Green, same as Generate Full New Prayer */
+    background-color: #C41E3A; /* Red from SVG Altar */
     /* Match the generate-all-button for size */
     padding: 24px;
     font-size: 1.2em;
@@ -142,7 +142,7 @@ h1 {
     background-color: #6c7a7b; /* Darker Grey */
 }
 .reflection-button:hover:not(:disabled) {
-    background-color: #d4ac0d; /* Darker Yellow */
+    background-color: #A01729; /* Darker Red from SVG Altar stroke */
 }
 
 #generate-all-button.primary-action:hover:not(:disabled) {
@@ -150,7 +150,7 @@ h1 {
 }
 
 #save-prayer-button.save-action:hover:not(:disabled) {
-    background-color: #27ae60; /* Darker Green, same as Generate Full New Prayer hover */
+    background-color: #A01729; /* Darker Red from SVG Altar stroke */
 }
 
 #view-calendar-button.view-saved-action:hover:not(:disabled) {
