@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
         "Give us this day, our daily bread", // Kept user's phrasing
         "Forgive us our trespasses, as we forgive those who trespass against us", // Kept user's phrasing
         "Lead us not into temptation, but deliver us from evil", // Kept user's phrasing
-        "For the kingdom, the power, and the glory are yours" // Adjusted to match earlier suggestion, "Amen" can be part of prayer text if desired
+        "For yours is the kingdom, and the power, and the glory, forever and ever"
     ];
 
     // User's current active and ordered list of categories
