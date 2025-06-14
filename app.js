@@ -104,6 +104,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const ttsStatusDiv = document.getElementById('tts-status'); // For TTS status messages
 
     // Scripture Modal UI Elements (assuming they are in index.html)
+    // (scripture modal elements...)
     const scriptureModal = document.getElementById('scripture-modal');
     const scriptureModalTitle = document.getElementById('scripture-modal-title');
     const scriptureModalBody = document.getElementById('scripture-modal-body');
@@ -116,6 +117,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const LORDS_PRAYER_DATA_URL = './data/lord_s_prayer.json';
     // URL of your deployed Google Cloud TTS function
     const BACKEND_TTS_URL = 'https://us-central1-method25.cloudfunctions.net/method25-tts-proxy/synthesize-speech';
+
+    // Screen Wake Lock
+    let screenWakeLock = null;
+    const keepScreenAwakeToggle = document.getElementById('keep-screen-awake-toggle');
 
     // --- Crypto Helper Functions ---
     const ENCRYPTION_KEY_NAME = 'prayerAppEncryptionKey_v1'; // Added versioning to key name
@@ -1219,6 +1224,47 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // --- Screen Wake Lock Functions ---
+    async function requestWakeLock() {
+        if ('wakeLock' in navigator && keepScreenAwakeToggle && keepScreenAwakeToggle.checked) {
+            try {
+                screenWakeLock = await navigator.wakeLock.request('screen');
+                screenWakeLock.addEventListener('release', () => {
+                    console.log('Screen Wake Lock was released');
+                    // screenWakeLock = null; // The sentinel is already released
+                });
+                console.log('Screen Wake Lock is active');
+                updateTtsStatus("Screen will stay awake during playback.", false);
+            } catch (err) {
+                console.error(`${err.name}, ${err.message}`);
+                updateTtsStatus(`Could not activate keep screen awake: ${err.message}`, true);
+            }
+        } else {
+            console.log('Screen Wake Lock API not supported or not enabled by user.');
+        }
+    }
+
+    async function releaseWakeLock() {
+        if (screenWakeLock !== null) {
+            try {
+                await screenWakeLock.release();
+                screenWakeLock = null;
+                console.log('Screen Wake Lock released');
+                // No need to update TTS status here as it's usually part of stopping/pausing
+            } catch (err) {
+                console.error(`${err.name}, ${err.message}`);
+            }
+        }
+    }
+
+    // Listen for visibility changes to re-evaluate wake lock (though it's auto-released on hidden)
+    // document.addEventListener('visibilitychange', async () => {
+    // if (screenWakeLock !== null && document.visibilityState === 'visible') {
+    // console.log('Page became visible, re-requesting wake lock if needed and enabled.');
+    // await requestWakeLock(); // Re-request if it was released due to tab becoming inactive
+    // }
+    // });
+
     // --- Initialization ---
     async function initializeAppCoreLogic() {
         if (!window.crypto || !window.crypto.subtle) {
@@ -1321,7 +1367,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Audio Control Listeners
         if (playAudioBtn) {
-            playAudioBtn.addEventListener('click', () => {
+            playAudioBtn.addEventListener('click', async () => {
                 buildPrayerAudioQueue(); // Ensure queue is fresh
 
                 // Check the current state of variables
@@ -1337,7 +1383,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (pauseAudioBtn) pauseAudioBtn.style.display = 'inline-block';
                     if (stopAudioBtn) stopAudioBtn.style.display = 'inline-block';
                     currentUtteranceIndex = 0; // Reset for a new playback session
-                    processQueue(); // Use processQueue to handle the sequence
+                    await requestWakeLock(); // Request wake lock before starting
+                    if (isSpeaking) { // Check again in case wake lock failed or user unchecks immediately
+                        processQueue(); // Use processQueue to handle the sequence
+                    }
                 } else if (isSpeaking && googleTtsAudioPlayer.paused) {
                     console.log("Condition 2 met: Resuming playback.");
                     googleTtsAudioPlayer.play().catch(e => console.error("Error resuming audio:", e));
@@ -1358,15 +1407,21 @@ document.addEventListener('DOMContentLoaded', () => {
         if (pauseAudioBtn) {
             pauseAudioBtn.addEventListener('click', () => {
                 if (googleTtsAudioPlayer && !googleTtsAudioPlayer.paused && isSpeaking) {
+                    // Pausing
                     googleTtsAudioPlayer.pause();
                     updateTtsStatus("Paused.", false);
                     clearTimeout(timeoutId); // Pause any active timeout
                     pauseAudioBtn.textContent = 'Resume';
+                    releaseWakeLock(); // Release wake lock when paused
                 } else if (googleTtsAudioPlayer && googleTtsAudioPlayer.paused && isSpeaking) {
+                    // Resuming
                     updateTtsStatus("Resuming...", false);
-                    googleTtsAudioPlayer.play().catch(e => console.error("Error resuming audio:", e));
-                    // If resuming a timed pause, processQueue will handle the next step after timeout
-                    // If resuming speech, speakText will update status.
+                    requestWakeLock().then(() => { // Request wake lock before resuming
+                        if (googleTtsAudioPlayer.paused) { // Check if still paused (e.g. wake lock failed)
+                           googleTtsAudioPlayer.play().catch(e => console.error("Error resuming audio:", e));
+                        }
+                        // If resuming a timed pause, processQueue will handle the next step after timeout
+                    });
                     if (pauseAudioBtn) pauseAudioBtn.textContent = 'Pause';
                 }
             });
@@ -1380,8 +1435,8 @@ document.addEventListener('DOMContentLoaded', () => {
             closeScriptureModalButton.addEventListener('click', hideScriptureModal);
         }
 
-        // Event delegation for scripture links on the prayer container
-        prayerContainer.addEventListener('click', async (event) => {
+        // Event delegation for scripture links anywhere in the document body
+        document.body.addEventListener('click', async (event) => {
             const target = event.target.closest('.scripture-link'); // Use closest to handle clicks on child elements if any
             if (target && target.dataset.reference) {
                 event.preventDefault(); // Prevent default <a> tag behavior
@@ -1394,6 +1449,13 @@ document.addEventListener('DOMContentLoaded', () => {
         window.addEventListener('keydown', (event) => {
             if (event.key === 'Escape' && scriptureModal && scriptureModal.style.display !== 'none') {
                 hideScriptureModal();
+            }
+        });
+
+        // Handle page visibility changes for wake lock
+        document.addEventListener('visibilitychange', async () => {
+            if (document.visibilityState === 'visible' && isSpeaking && !googleTtsAudioPlayer.paused && keepScreenAwakeToggle && keepScreenAwakeToggle.checked) {
+                await requestWakeLock(); // Re-acquire lock if tab becomes visible and playback was active
             }
         });
     }
@@ -1471,6 +1533,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (pauseAudioBtn) { pauseAudioBtn.style.display = 'none'; pauseAudioBtn.textContent = 'Pause'; }
         if (stopAudioBtn) stopAudioBtn.style.display = 'none';
         if (currentReadingTextDiv) currentReadingTextDiv.textContent = "";
+        releaseWakeLock(); // Ensure wake lock is released
         updateTtsStatus("Playback stopped.", false);
     }
     // Initial render of the calendar if user is already logged in on page load

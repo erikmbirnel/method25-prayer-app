@@ -60,6 +60,16 @@
                 </ul>
             </div>
 
+            <hr style="border: 0; height: 1px; background: #ccc; margin: 20px 0;">
+
+            <!-- Audio Playback Settings -->
+            <div id="audio-playback-settings-section">
+                <h4>Audio Playback</h4>
+                <input type="checkbox" id="keep-screen-awake-toggle" name="keep-screen-awake">
+                <label for="keep-screen-awake-toggle">Keep screen awake during audio playback</label>
+                <p style="font-size: 0.8em; color: #666; margin-top: 5px;">(Note: Enabling this may consume more battery.)</p>
+            </div>
+
             <button id="save-settings-button" class="action-button primary-action" style="margin-top: 20px;">Save Settings</button>
             <button id="cancel-settings-button" class="action-button" style="margin-top: 20px; margin-left: 10px;">Cancel</button>
         </div>
@@ -88,6 +98,11 @@
             <button id="stopAudioBtn" class="action-button" style="display:none;">Stop</button>
             <div id="tts-status" class="tts-status-message" style="margin-top: 8px; font-size: 0.9em; color: #333;"></div> <!-- For TTS status messages -->
             <div id="currentReadingText" style="margin-top: 5px; font-style: italic; color: #555;"></div> <!-- For the text being read -->
+            <!-- The screen awake toggle was conceptually here or near here, it's now moved to settings modal -->
+            <!-- <div id="audio-options" style="margin-top: 10px; text-align: center;">
+                <input type="checkbox" id="keep-screen-awake-toggle" name="keep-screen-awake">
+                <label for="keep-screen-awake-toggle">Keep screen awake during audio playback</label>
+            </div> -->
         </div>
     </div>
     
