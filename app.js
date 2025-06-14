@@ -1194,27 +1194,51 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 timeoutId = setTimeout(() => {
                     // Play bell sound after pause, before next speech
-                    updateTtsStatus("Transition sound...", false);
+                    updateTtsStatus("Playing transition sound...", false);
                     bellSoundPlayer.currentTime = 0; // Ensure it plays from the beginning
 
+                    let bellErrorHandled = false; // Flag to prevent double handling of errors
+
+                    // Clear previous handlers to ensure they don't stack if this logic is re-entered unexpectedly
+                    bellSoundPlayer.onended = null;
+                    bellSoundPlayer.onerror = null;
+
                     bellSoundPlayer.onended = () => {
+                        if (bellErrorHandled) return; // If error was already handled, do nothing
+                        console.log("Bell sound finished.");
+                        updateTtsStatus("Transition finished.", false);
                         currentUtteranceIndex++;
                         processQueue(); // Move to the next item after bell
                     };
+
                     bellSoundPlayer.onerror = (e) => {
-                        console.error("Error playing bell sound:", e);
-                        updateTtsStatus("Error playing transition sound.", true);
+                        if (bellErrorHandled) return; // If error was already handled, do nothing
+                        bellErrorHandled = true;
+
+                        console.error("Bell sound general error event:", e);
+                        if (bellSoundPlayer.error) {
+                            console.error("Bell player error object:", bellSoundPlayer.error);
+                            updateTtsStatus(`Bell error: Code ${bellSoundPlayer.error.code}, Message: ${bellSoundPlayer.error.message}`, true);
+                        } else {
+                            updateTtsStatus("Bell error (unknown).", true);
+                        }
                         currentUtteranceIndex++; // Still proceed
                         processQueue();
                     };
 
-                    bellSoundPlayer.play().catch(e => { // Catch initial play error if any
-                        console.error("Error initiating bell sound play:", e);
-                        updateTtsStatus("Error playing transition sound.", true);
-                        currentUtteranceIndex++; // Still proceed
-                        processQueue();
-                    });
+                    bellSoundPlayer.play()
+                        .then(() => {
+                            console.log("Bell sound play() call initiated successfully.");
+                        })
+                        .catch(e => { // Catch initial play() promise rejection
+                            if (bellErrorHandled) return; // If error was already handled by onerror, do nothing
+                            bellErrorHandled = true;
 
+                            console.error("Bell sound play() promise rejected:", e);
+                            updateTtsStatus(`Bell play error: ${e.message}`, true);
+                            currentUtteranceIndex++; // Still proceed
+                            processQueue();
+                        });
                 }, item.duration);
             }
         } else {
@@ -1473,10 +1497,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 utteranceQueue.push({ type: 'speech', text: `${categoryName}.` });
                 utteranceQueue.push({ type: 'speech', text: promptData.prompt });
 
-                if (promptData.scripture_references && promptData.scripture_references.length > 0) {
-                    const referencesText = `${promptData.scripture_references.join(', ')}.`;
-                    utteranceQueue.push({ type: 'speech', text: referencesText });
-                }
+                // Removed the reading of scripture references
+                // if (promptData.scripture_references && promptData.scripture_references.length > 0) {
+                //     const referencesText = `${promptData.scripture_references.join(', ')}.`;
+                //     utteranceQueue.push({ type: 'speech', text: referencesText });
+                // }
 
                 // Add category-specific concluding phrases for Method for Prayer mode
                 if (currentPrayerMode === 'method_for_prayer') {
