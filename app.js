@@ -932,40 +932,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function populateSettingsModal() {
         if (!categorySettingsList) return;
-        categorySettingsList.innerHTML = ''; // Clear existing items
-
-        DEFAULT_PRAYER_CATEGORIES.forEach(categoryName => {
-            // This part is for the "Method for Prayer" mode's categories.
-            // The actual display logic (checked, disabled, drag handle) will be handled
-            // by updateSettingsUIBasedOnModeSelection or similar logic.
-            // For now, just create the elements.
-            const listItem = document.createElement('li');
-
-            const dragHandle = document.createElement('span');
-            dragHandle.className = 'drag-handle';
-            dragHandle.innerHTML = '&#x2630;&nbsp;'; // Hamburger icon for dragging
-            listItem.appendChild(dragHandle);
-
-            const checkbox = document.createElement('input');
-            checkbox.type = 'checkbox';
-            checkbox.id = `setting-cb-${categoryName.replace(/[\s/]+/g, '-')}`;
-            checkbox.value = categoryName;
-            // Checked state will be set by updateSettingsUIBasedOnModeSelection
-            listItem.appendChild(checkbox);
-
-            const label = document.createElement('label');
-            label.htmlFor = checkbox.id;
-            label.textContent = categoryName;
-            listItem.appendChild(label);
-
-            categorySettingsList.appendChild(listItem);
-        });
+        // Clearing and populating the categorySettingsList is now fully handled by
+        // updateSettingsUIBasedOnModeSelection, which is called immediately
+        // after this function in openSettingsModal.
+        // The erroneous loop using the undefined DEFAULT_PRAYER_CATEGORIES has been removed.
 
         // Set radio button state
-        if (currentPrayerMode === 'method_for_prayer' && prayerModeMethodRadio) {
-            prayerModeMethodRadio.checked = true;
-        } else if (currentPrayerMode === 'lords_prayer' && prayerModeLordsPrayerRadio) {
-            prayerModeLordsPrayerRadio.checked = true;
+        if (prayerModeMethodRadio) { // Check if element exists
+            prayerModeMethodRadio.checked = (currentPrayerMode === 'method_for_prayer');
+        }
+        if (prayerModeLordsPrayerRadio) { // Check if element exists
+            prayerModeLordsPrayerRadio.checked = (currentPrayerMode === 'lords_prayer');
         }
     }
 
