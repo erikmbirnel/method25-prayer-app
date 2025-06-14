@@ -32,13 +32,36 @@
     <div id="settings-modal" class="modal" style="display:none;">
         <div class="modal-content">
             <span id="close-settings-modal-button" class="close-button">&times;</span>
-            <h2>Prayer Category Settings</h2>
-            <p>Check categories to include. Drag to reorder.</p>
-            <ul id="category-settings-list" style="list-style-type: none; padding: 0;">
-                <!-- Category settings will be populated here by app.js -->
-            </ul>
-            <button id="save-settings-button" class="action-button primary-action" style="margin-top: 15px;">Save Settings</button>
-            <button id="cancel-settings-button" class="action-button" style="margin-top: 15px;">Cancel</button>
+            <h2>Settings</h2>
+
+            <!-- Mode Selection -->
+            <div id="mode-selection-container" style="margin-bottom: 15px;">
+                <h4>Prayer Mode</h4>
+                <label>
+                    <input type="radio" name="prayerMode" id="mode-method-for-prayer" value="method_for_prayer" checked>
+                    Method for Prayer (Matthew Henry)
+                </label><br>
+                <label style="margin-top: 5px; display: inline-block;">
+                    <input type="radio" name="prayerMode" id="mode-lords-prayer" value="lords_prayer">
+                    The Lord's Prayer
+                </label>
+            </div>
+
+            <hr style="border: 0; height: 1px; background: #ccc; margin: 20px 0;">
+
+            <!-- Category Settings (conditionally interactive) -->
+            <div id="category-settings-section">
+                <h4>Prayer Category Settings</h4>
+                <p id="category-settings-instruction" style="font-size: 0.9em; color: #555;">
+                    Check categories to include. Drag to reorder.
+                </p>
+                <ul id="category-settings-list" style="list-style-type: none; padding: 0; margin-top: 10px;">
+                    <!-- Category settings will be populated here by app.js -->
+                </ul>
+            </div>
+
+            <button id="save-settings-button" class="action-button primary-action" style="margin-top: 20px;">Save Settings</button>
+            <button id="cancel-settings-button" class="action-button" style="margin-top: 20px; margin-left: 10px;">Cancel</button>
         </div>
     </div>
 

@@ -420,6 +420,11 @@ h1 {
     opacity: 0.4;
     background: #c8ebfb; /* Light blue background for placeholder */
 }
+/* Style for list items when dragging is disabled for a mode */
+#category-settings-list li.no-drag .drag-handle {
+    display: none;
+}
+
 
 /* --- Audio Controls --- */
 #audio-controls {

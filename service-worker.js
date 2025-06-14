@@ -1,13 +1,15 @@
-const CACHE_NAME = 'prayer-app-cache-v6'; // Increment cache version for new banner SVG
+const CACHE_NAME = 'prayer-app-cache-v7'; // Increment cache version for new prayer mode and data
 const urlsToCache = [
     '/',
     '/index.html',
     '/style.css',
     '/app.js',
     '/manifest.json', // Ensure manifest is cached
+    '/crypto-utils.js', // Ensure crypto utils are cached
     '/icons/icon-192.png',
     '/icons/icon-512.png',
     '/data/outcome.json', 
+    '/data/lord_s_prayer.json', // Cache the new Lord's Prayer data
     '/sounds/bell.mp3',
     '/images/red_altar_banner.svg' // Cache the new banner
 ];

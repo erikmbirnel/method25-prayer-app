@@ -2,16 +2,30 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log("PWA App Started");
 
     // Master list of all possible prayer categories
-    const DEFAULT_PRAYER_CATEGORIES = [
+    const METHOD_PRAYER_DEFAULT_CATEGORIES = [
         "Adoration",
         "Thanksgiving",
         "Confession",
         "Petition",
         "Intercession"
     ];
+    // Define categories for Lord's Prayer mode
+    const LORDS_PRAYER_DEFAULT_CATEGORIES = [
+        "Our Father in heaven",
+        "Hallowed be your name", // Added missing category
+        "Your kingdom come",
+        "Your will be done on earth as it is in heaven",
+        "Give us this day, our daily bread", // Kept user's phrasing
+        "Forgive us our trespasses, as we forgive those who trespass against us", // Kept user's phrasing
+        "Lead us not into temptation, but deliver us from evil", // Kept user's phrasing
+        "For the kingdom, the power, and the glory are yours" // Adjusted to match earlier suggestion, "Amen" can be part of prayer text if desired
+    ];
+
     // User's current active and ordered list of categories
-    let userPrayerCategoryOrder = [...DEFAULT_PRAYER_CATEGORIES];
-    const USER_SETTINGS_KEY = 'prayerAppCategorySettings_v1'; // Key for localStorage
+    let userPrayerCategoryOrder = [...METHOD_PRAYER_DEFAULT_CATEGORIES]; // Specifically for Method for Prayer mode
+    const USER_CATEGORY_ORDER_KEY = 'prayerAppCategorySettings_v1'; // Key for localStorage for Method mode category order
+    const PRAYER_MODE_KEY = 'prayerAppMode_v1'; // Key for localStorage for prayer mode
+    let currentPrayerMode = 'method_for_prayer'; // Default mode
     let allPromptsData = [];
     let groupedByCategory = {};
     let prayerHistory = {}; // For the "Back" button feature
@@ -72,6 +86,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const categorySettingsList = document.getElementById('category-settings-list');
     const saveSettingsButton = document.getElementById('save-settings-button');
     const cancelSettingsButton = document.getElementById('cancel-settings-button');
+    const categorySettingsInstruction = document.getElementById('category-settings-instruction');
+    const prayerModeMethodRadio = document.getElementById('mode-method-for-prayer');
+    const prayerModeLordsPrayerRadio = document.getElementById('mode-lords-prayer');
+    const prayerMethodSubheader = document.getElementById('prayer-method-subheader');
+    let sortableInstance = null; // To hold the SortableJS instance
 
     // Audio Controls UI Elements
     // ADD THIS console.log:
@@ -92,6 +111,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const ESV_API_TOKEN = '78cd4c38aea5c20fcc99a63529076bc602be3848'; // Your ESV API Token
 
+    // Data URLs
+    const METHOD_PRAYER_DATA_URL = './data/outcome.json';
+    const LORDS_PRAYER_DATA_URL = './data/lord_s_prayer.json';
     // URL of your deployed Google Cloud TTS function
     const BACKEND_TTS_URL = 'https://us-central1-method25.cloudfunctions.net/method25-tts-proxy/synthesize-speech';
 
@@ -234,18 +256,19 @@ document.addEventListener('DOMContentLoaded', () => {
         prayerHistory = {}; // Reset history
         currentPromptsDisplayed = {}; // Reset current displayed prompts
 
+        const activeCategories = getActiveCategoriesForCurrentMode();
+
         for (const item of allPromptsData) {
             const category = item.prayer_category || "Uncategorized";
             if (!groupedByCategory[category]) {
                 groupedByCategory[category] = [];
             }
             // Store the prompt directly, assuming structure from outcome.json
-            // { prompt: "text...", scripture_references: [...] }
             groupedByCategory[category].push(item);
         }
         // Initialize prayer history and current prompts for the user's active categories
-        for (const categoryName of userPrayerCategoryOrder) {
-            prayerHistory[categoryName] = [];
+        for (const categoryName of activeCategories){
+            if (!prayerHistory[categoryName]) prayerHistory[categoryName] = []; // Ensure initialization only if not present
             currentPromptsDisplayed[categoryName] = null; // Initialize as null
         }
     }
@@ -439,8 +462,9 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error("No prompts available to display.");
             return;
         }
+        const activeCategories = getActiveCategoriesForCurrentMode();
         // Display prayer segments based on the user's category order
-        for (const categoryName of userPrayerCategoryOrder) {
+        for (const categoryName of activeCategories) {
             // Save current prompt to history before getting a new one
             // Use the stored promptData object directly
             if (currentPromptsDisplayed[categoryName]) { // Check if it's not null (i.e., not a placeholder)
@@ -564,7 +588,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Use map to create promises for each segment's data, including potential async encryption
         // Iterate over the user's current category order
-        const segmentDataPromises = userPrayerCategoryOrder.map(async categoryName => {
+        const activeCategories = getActiveCategoriesForCurrentMode();
+        const segmentDataPromises = activeCategories.map(async categoryName => {
             const categoryId = `category-${categoryName.replace(/[\s/]+/g, '-')}`;
             const categoryDiv = document.getElementById(categoryId);
             if (categoryDiv) {
@@ -888,11 +913,21 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         populateSettingsModal();
+        updateSettingsUIBasedOnModeSelection(); // Initial UI setup based on current mode
         if (settingsModal) settingsModal.style.display = 'block';
     }
 
     function closeSettingsModal() {
         if (settingsModal) settingsModal.style.display = 'none';
+        if (sortableInstance) {
+            // It's good practice to destroy SortableJS instance if not needed,
+            // or if the list it's attached to might be cleared/rebuilt differently.
+            // However, for simplicity, we can also just disable it.
+            // sortableInstance.destroy();
+            // sortableInstance = null;
+            // Or, if re-using the same list element, ensure it's correctly re-initialized or its options updated.
+            // For now, let's assume re-initialization in populateSettingsModal if needed.
+        }
     }
 
     function populateSettingsModal() {
@@ -900,17 +935,56 @@ document.addEventListener('DOMContentLoaded', () => {
         categorySettingsList.innerHTML = ''; // Clear existing items
 
         DEFAULT_PRAYER_CATEGORIES.forEach(categoryName => {
+            // This part is for the "Method for Prayer" mode's categories.
+            // The actual display logic (checked, disabled, drag handle) will be handled
+            // by updateSettingsUIBasedOnModeSelection or similar logic.
+            // For now, just create the elements.
             const listItem = document.createElement('li');
 
             const dragHandle = document.createElement('span');
             dragHandle.className = 'drag-handle';
             dragHandle.innerHTML = '&#x2630;&nbsp;'; // Hamburger icon for dragging
+            listItem.appendChild(dragHandle);
 
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
             checkbox.id = `setting-cb-${categoryName.replace(/[\s/]+/g, '-')}`;
             checkbox.value = categoryName;
-            checkbox.checked = userPrayerCategoryOrder.includes(categoryName); // Check if it's currently active
+            // Checked state will be set by updateSettingsUIBasedOnModeSelection
+            listItem.appendChild(checkbox);
+
+            const label = document.createElement('label');
+            label.htmlFor = checkbox.id;
+            label.textContent = categoryName;
+            listItem.appendChild(label);
+
+            categorySettingsList.appendChild(listItem);
+        });
+
+        // Set radio button state
+        if (currentPrayerMode === 'method_for_prayer' && prayerModeMethodRadio) {
+            prayerModeMethodRadio.checked = true;
+        } else if (currentPrayerMode === 'lords_prayer' && prayerModeLordsPrayerRadio) {
+            prayerModeLordsPrayerRadio.checked = true;
+        }
+    }
+
+    function updateSettingsUIBasedOnModeSelection() {
+        const selectedMode = prayerModeMethodRadio.checked ? 'method_for_prayer' : 'lords_prayer';
+        categorySettingsList.innerHTML = ''; // Clear current list
+
+        const categoriesForSelectedMode = selectedMode === 'method_for_prayer' ? METHOD_PRAYER_DEFAULT_CATEGORIES : LORDS_PRAYER_DEFAULT_CATEGORIES;
+
+        categoriesForSelectedMode.forEach(categoryName => {
+            const listItem = document.createElement('li');
+            const dragHandle = document.createElement('span');
+            dragHandle.className = 'drag-handle';
+            dragHandle.innerHTML = '&#x2630;&nbsp;';
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.id = `setting-cb-${categoryName.replace(/[\s/]+/g, '-')}`;
+            checkbox.value = categoryName;
 
             const label = document.createElement('label');
             label.htmlFor = checkbox.id;
@@ -920,76 +994,124 @@ document.addEventListener('DOMContentLoaded', () => {
             listItem.appendChild(checkbox);
             listItem.appendChild(label);
             categorySettingsList.appendChild(listItem);
+
+            if (selectedMode === 'method_for_prayer') {
+                checkbox.checked = userPrayerCategoryOrder.includes(categoryName);
+                checkbox.disabled = false;
+                dragHandle.style.display = 'inline';
+                listItem.classList.remove('no-drag');
+            } else { // Lord's Prayer mode
+                checkbox.checked = true; // All categories are included
+                checkbox.disabled = true;
+                dragHandle.style.display = 'none';
+                listItem.classList.add('no-drag');
+            }
         });
 
-        // Initialize SortableJS for drag-and-drop reordering
-        if (typeof Sortable !== 'undefined' && categorySettingsList) {
-            new Sortable(categorySettingsList, {
+        if (categorySettingsInstruction) {
+            categorySettingsInstruction.style.display = selectedMode === 'method_for_prayer' ? 'block' : 'none';
+        }
+
+        if (sortableInstance) {
+            sortableInstance.option('disabled', selectedMode === 'lords_prayer');
+        } else if (selectedMode === 'method_for_prayer' && typeof Sortable !== 'undefined' && categorySettingsList) {
+            sortableInstance = new Sortable(categorySettingsList, {
                 animation: 150, // ms, animation speed moving items when sorting, `0` — without animation
                 handle: '.drag-handle', // Restrict drag start to elements with the .drag-handle class
                 ghostClass: 'sortable-ghost', // Class name for the drop placeholder
+                filter: '.no-drag', // Ignore items with .no-drag class for dragging
+                preventOnFilter: true // Prevent dragging on filtered items
             });
         }
     }
 
     function saveUserSettings() {
         stopAudioPlayback(); // Stop audio when saving settings (as UI will rebuild)
-        if (!categorySettingsList) return;
+        const newMode = prayerModeMethodRadio.checked ? 'method_for_prayer' : 'lords_prayer';
 
-        const newOrder = [];
-        const listItems = categorySettingsList.querySelectorAll('li');
-
-        listItems.forEach(listItem => {
-            const checkbox = listItem.querySelector('input[type="checkbox"]');
-            if (checkbox && checkbox.checked) {
-                newOrder.push(checkbox.value); // checkbox.value is the categoryName
-            }
-        });
-
-        userPrayerCategoryOrder = newOrder;
-
-        try {
-            localStorage.setItem(USER_SETTINGS_KEY, JSON.stringify(userPrayerCategoryOrder));
-            console.log("User settings saved:", userPrayerCategoryOrder);
-        } catch (e) {
-            console.error("Error saving user settings to localStorage:", e);
+        if (newMode === 'method_for_prayer' && categorySettingsList) {
+            const newOrder = [];
+            const listItems = categorySettingsList.querySelectorAll('li');
+            listItems.forEach(listItem => {
+                const checkbox = listItem.querySelector('input[type="checkbox"]');
+                if (checkbox && checkbox.checked) {
+                    newOrder.push(checkbox.value);
+                }
+            });
+            userPrayerCategoryOrder = newOrder.length > 0 ? newOrder : [...METHOD_PRAYER_DEFAULT_CATEGORIES]; // Fallback if all unchecked
+            localStorage.setItem(USER_CATEGORY_ORDER_KEY, JSON.stringify(userPrayerCategoryOrder));
         }
 
-        rebuildPrayerUI();
+        currentPrayerMode = newMode;
+        localStorage.setItem(PRAYER_MODE_KEY, JSON.stringify(currentPrayerMode));
+
+        console.log("Settings saved. Mode:", currentPrayerMode, "Method Order:", userPrayerCategoryOrder);
+        initializeAppCoreLogic(); // This will fetch new data if mode changed and rebuild UI
         closeSettingsModal();
     }
 
     function rebuildPrayerUI() {
         prayerContainer.innerHTML = ''; // Clear existing UI
-        userPrayerCategoryOrder.forEach(categoryName => { // Create UI for active categories in user's order
+        const activeCategories = getActiveCategoriesForCurrentMode();
+        activeCategories.forEach(categoryName => { // Create UI for active categories in user's order
             createCategoryUI(categoryName);
         });
         groupPrompts(); // Re-initialize history/trackers for the new category set/order
         displayFullPrayer(); // Refresh the displayed prayer with new settings
     }
 
-    function loadUserSettings() {
+    function loadUserCategoryOrder() { // Renamed for clarity
         // This runs before UI is built, so no need to stop audio here
         try {
-            const savedSettings = localStorage.getItem(USER_SETTINGS_KEY);
+            const savedSettings = localStorage.getItem(USER_CATEGORY_ORDER_KEY);
             if (savedSettings) {
                 const parsedSettings = JSON.parse(savedSettings);
                 if (Array.isArray(parsedSettings) && parsedSettings.length > 0) {
                     // Basic validation: ensure all loaded categories are still in DEFAULT_PRAYER_CATEGORIES
                     // This prevents issues if a category is removed from the app in the future.
-                    userPrayerCategoryOrder = parsedSettings.filter(cat => DEFAULT_PRAYER_CATEGORIES.includes(cat));
+                    userPrayerCategoryOrder = parsedSettings.filter(cat => METHOD_PRAYER_DEFAULT_CATEGORIES.includes(cat));
                     if (userPrayerCategoryOrder.length === 0) { // If all saved categories were invalid
-                        userPrayerCategoryOrder = [...DEFAULT_PRAYER_CATEGORIES];
+                        userPrayerCategoryOrder = [...METHOD_PRAYER_DEFAULT_CATEGORIES];
                     }
                 } else if (Array.isArray(parsedSettings) && parsedSettings.length === 0) {
-                    userPrayerCategoryOrder = []; // User explicitly saved an empty list
+                    userPrayerCategoryOrder = []; // User explicitly saved an empty list for Method mode
                 }
-                console.log("User settings loaded:", userPrayerCategoryOrder);
+                console.log("User category order for Method Prayer loaded:", userPrayerCategoryOrder);
             }
         } catch (e) {
-            console.error("Error loading user settings from localStorage:", e);
+            console.error("Error loading user category order from localStorage:", e);
             // Fallback to default if loading fails
-            userPrayerCategoryOrder = [...DEFAULT_PRAYER_CATEGORIES];
+            userPrayerCategoryOrder = [...METHOD_PRAYER_DEFAULT_CATEGORIES];
+        }
+    }
+
+    function loadPrayerMode() {
+        try {
+            const savedMode = localStorage.getItem(PRAYER_MODE_KEY);
+            if (savedMode) {
+                const parsedMode = JSON.parse(savedMode);
+                if (parsedMode === 'method_for_prayer' || parsedMode === 'lords_prayer') {
+                    currentPrayerMode = parsedMode;
+                }
+            }
+            console.log("Prayer mode loaded:", currentPrayerMode);
+        } catch (e) {
+            console.error("Error loading prayer mode from localStorage:", e);
+            currentPrayerMode = 'method_for_prayer'; // Default
+        }
+    }
+
+    function getActiveCategoriesForCurrentMode() {
+        if (currentPrayerMode === 'method_for_prayer') {
+            return userPrayerCategoryOrder.length > 0 ? userPrayerCategoryOrder : [...METHOD_PRAYER_DEFAULT_CATEGORIES];
+        } else { // lords_prayer
+            return [...LORDS_PRAYER_DEFAULT_CATEGORIES];
+        }
+    }
+
+    function updateSubheaderText() {
+        if (prayerMethodSubheader) {
+            prayerMethodSubheader.textContent = currentPrayerMode === 'method_for_prayer' ? "A Method for Prayer by Matthew Henry" : "The Lord's Prayer";
         }
     }
 
@@ -1121,23 +1243,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Initialization ---
-    async function initializeApp() {
-        loadUserSettings(); // Load user settings first
-
+    async function initializeAppCoreLogic() {
         if (!window.crypto || !window.crypto.subtle) {
             console.warn("Web Crypto API not available. Reflection encryption will be disabled.");
             // You might want to disable reflection-related buttons or show a persistent message to the user.
         }
 
-        // Create UI structure first
-        prayerContainer.innerHTML = ''; // Clear any existing content
-        userPrayerCategoryOrder.forEach(categoryName => {
-            createCategoryUI(categoryName);
-        });
+        updateSubheaderText();
+
+        const dataSourceUrl = currentPrayerMode === 'method_for_prayer' ? METHOD_PRAYER_DATA_URL : LORDS_PRAYER_DATA_URL;
 
         try {
-            // Adjust the path to where you'll place outcome.json in your PWA project
-            const response = await fetch('./data/outcome.json');
+            const response = await fetch(dataSourceUrl);
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
@@ -1149,14 +1266,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            groupPrompts();
-            displayFullPrayer();
+            rebuildPrayerUI(); // This will create category UI, then groupPrompts, then displayFullPrayer
 
         } catch (error) {
             console.error("Failed to load or process prayer prompts:", error);
             prayerContainer.innerHTML = `<p>Error loading prayer data: ${error.message}. Check console for details.</p>`;
         }
+    }
 
+    // --- Initialization ---
+    async function initializeApp() {
+        loadPrayerMode(); // Load mode first
+        loadUserCategoryOrder(); // Load user category preferences for Method mode
+
+        await initializeAppCoreLogic(); // Then initialize core logic based on loaded settings
+
+        // Event Listeners (should only be set up once)
         if (generateAllButton) {
             generateAllButton.addEventListener('click', displayFullPrayer);
         }
@@ -1207,6 +1332,14 @@ document.addEventListener('DOMContentLoaded', () => {
             saveSettingsButton.addEventListener('click', () => {
                 saveUserSettings();
             });
+        }
+        // Listen to radio button changes in settings modal to update UI dynamically
+        if (prayerModeMethodRadio) {
+            prayerModeMethodRadio.addEventListener('change', updateSettingsUIBasedOnModeSelection);
+        }
+        if (prayerModeLordsPrayerRadio) {
+            prayerModeLordsPrayerRadio.addEventListener('change', updateSettingsUIBasedOnModeSelection);
+            // Removed extraneous });
         }
 
         // Audio Control Listeners
@@ -1293,7 +1426,8 @@ document.addEventListener('DOMContentLoaded', () => {
         utteranceQueue = [];
         currentUtteranceIndex = 0;
 
-        userPrayerCategoryOrder.forEach(categoryName => {
+        const activeCategories = getActiveCategoriesForCurrentMode();
+        activeCategories.forEach(categoryName => {
             const promptData = currentPromptsDisplayed[categoryName];
 
             if (promptData && promptData.prompt && promptData.prompt.trim() !== '') {
