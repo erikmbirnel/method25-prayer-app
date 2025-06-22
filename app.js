@@ -556,6 +556,39 @@ document.addEventListener('DOMContentLoaded', () => {
             });
     }
 
+    /**
+     * Receives a custom token from a native application (e.g., an iOS app's WKWebView)
+     * and attempts to sign in the Firebase user in the web app.
+     * This allows for a seamless authentication transition from native to web.
+     * @param {string} customToken The Firebase custom authentication token passed from the native app.
+     */
+    function receiveCustomToken(customToken) {
+      console.log("Web app received custom token. Attempting sign-in...");
+      if (!firebase || !firebase.auth) {
+          console.error("Firebase Auth is not initialized. Cannot sign in with custom token.");
+          // Optionally, communicate failure back to the native app
+          return;
+      }
+
+      firebase.auth().signInWithCustomToken(customToken)
+        .then((userCredential) => {
+          // Signed in successfully!
+          var user = userCredential.user;
+          console.log("Web app: Signed in with custom token!", user.uid);
+          // The existing `auth.onAuthStateChanged` listener will automatically handle all UI updates,
+          // such as hiding the login button and showing user-specific content.
+        })
+        .catch((error) => {
+          var errorCode = error.code;
+          var errorMessage = error.message;
+          console.error("Web app: Error signing in with custom token:", errorCode, errorMessage);
+          // Handle errors, e.g., by showing a message to the user in the webview.
+        });
+    }
+
+    // Expose the function to the global window object so it can be called from the native iOS app.
+    window.receiveCustomToken = receiveCustomToken;
+
     auth.onAuthStateChanged(user => {
         currentUser = user;
         if (user) {
