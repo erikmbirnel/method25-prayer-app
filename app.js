@@ -568,12 +568,7 @@ document.addEventListener('DOMContentLoaded', () => {
             logoutButton.style.display = 'inline-block';
             savePrayerButton.style.display = 'block'; // Make save button block to take full width
             mySavedPrayersHeading.style.display = 'block';
-            // ADD THIS console.log, right before line 526 in your code:
-            console.log("DEBUG: Inside onAuthStateChanged (user logged in). Before line 526. settingsButton:", settingsButton);
             if(settingsButton) settingsButton.style.display = 'inline-block'; // Show settings button
-            // ADD THIS console.log, right before line 527 in your code:
-            console.log("DEBUG: Inside onAuthStateChanged (user logged in). Before line 527. audioControlsContainer:", audioControlsContainer);
-            if(audioControlsContainer) audioControlsContainer.style.display = 'block'; // Show audio controls
             savedPrayersSection.style.display = 'block'; // Show the whole section
             calendarContainer.style.display = 'block'; // Show calendar by default
         } else {
@@ -585,14 +580,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             logoutButton.style.display = 'none';
             savePrayerButton.style.display = 'none';
-            viewCalendarButton.style.display = 'none';
             calendarContainer.style.display = 'none';
-            // ADD THIS console.log:
-            console.log("DEBUG: Inside onAuthStateChanged (user NOT logged in). Before settingsButton.style.display. settingsButton:", settingsButton);
             if(settingsButton) settingsButton.style.display = 'none'; // Hide settings button
-            // ADD THIS console.log:
-            console.log("DEBUG: Inside onAuthStateChanged (user NOT logged in). Before audioControlsContainer.style.display. audioControlsContainer:", audioControlsContainer);
-            if(audioControlsContainer) audioControlsContainer.style.display = 'none'; // Hide audio controls
             recalledPrayerContainer.style.display = 'none';
             recalledPrayerListContainer.style.display = 'none';
             calendarGrid.innerHTML = ''; // Clear calendar grid
