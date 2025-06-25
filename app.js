@@ -532,95 +532,134 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Firebase Authentication ---
-    function handleLogin() {
-        const provider = new firebase.auth.GoogleAuthProvider();
-        auth.signInWithPopup(provider)
-            .then((result) => {
-                console.log("User logged in:", result.user.displayName);
-                // User is signed in.
-            })
-            .catch((error) => {
-                console.error("Login failed:", error);
-            });
-    }
-
-    function handleLogout() {
-        auth.signOut()
-            .then(() => {
-                stopAudioPlayback(); // Stop audio on logout
-                console.log("User logged out");
-                // User is signed out.
-            })
-            .catch((error) => {
-                console.error("Logout failed:", error);
-            });
-    }
-
-    /**
-     * Receives a custom token from a native application (e.g., an iOS app's WKWebView)
-     * and attempts to sign in the Firebase user in the web app.
-     * This allows for a seamless authentication transition from native to web.
-     * @param {string} customToken The Firebase custom authentication token passed from the native app.
-     */
-    function receiveCustomToken(customToken) {
-      console.log("Web app received custom token. Attempting sign-in...");
-      if (!firebase || !firebase.auth) {
-          console.error("Firebase Auth is not initialized. Cannot sign in with custom token.");
-          // Optionally, communicate failure back to the native app
-          return;
-      }
-
-      firebase.auth().signInWithCustomToken(customToken)
-        .then((userCredential) => {
-          // Signed in successfully!
-          var user = userCredential.user;
-          console.log("Web app: Signed in with custom token!", user.uid);
-          // The existing `auth.onAuthStateChanged` listener will automatically handle all UI updates,
-          // such as hiding the login button and showing user-specific content.
+function handleLogin() {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    auth.signInWithPopup(provider)
+        .then((result) => {
+            console.log("User logged in:", result.user.displayName);
+            // User is signed in.
         })
         .catch((error) => {
-          var errorCode = error.code;
-          var errorMessage = error.message;
-          console.error("Web app: Error signing in with custom token:", errorCode, errorMessage);
-          // Handle errors, e.g., by showing a message to the user in the webview.
+            console.error("Login failed:", error);
         });
+}
+
+function handleLogout() {
+    auth.signOut()
+        .then(() => {
+            stopAudioPlayback(); // Stop audio on logout
+            console.log("User logged out");
+            // User is signed out.
+        })
+        .catch((error) => {
+            console.error("Logout failed:", error);
+        });
+}
+
+/**
+ * Receives an ID token from a native application (iOS app's WKWebView)
+ * and attempts to sign in the Firebase user in the web app.
+ * This allows for seamless authentication transition from native to web.
+ * @param {string} idToken The Firebase ID token passed from the native app.
+ */
+function receiveIDToken(idToken) {
+    console.log("Web app received ID token. Attempting to verify and sign in...");
+    if (!firebase || !firebase.auth) {
+        console.error("Firebase Auth is not initialized. Cannot sign in with ID token.");
+        return;
     }
 
-    // Expose the function to the global window object so it can be called from the native iOS app.
-    window.receiveCustomToken = receiveCustomToken;
+    // Create a credential from the ID token
+    const credential = firebase.auth.GoogleAuthProvider.credential(idToken);
+    
+    // Sign in with the credential
+    firebase.auth().signInWithCredential(credential)
+        .then((userCredential) => {
+            // Signed in successfully!
+            const user = userCredential.user;
+            console.log("Web app: Signed in with ID token!", user.uid);
+            // The existing `auth.onAuthStateChanged` listener will automatically handle all UI updates
+        })
+        .catch((error) => {
+            console.error("Web app: Error signing in with ID token:", error.code, error.message);
+            
+            // Fallback: Try to use signInWithCustomToken if the above fails
+            // This is for backwards compatibility
+            firebase.auth().signInWithCustomToken(idToken)
+                .then((userCredential) => {
+                    const user = userCredential.user;
+                    console.log("Web app: Signed in with custom token fallback!", user.uid);
+                })
+                .catch((fallbackError) => {
+                    console.error("Web app: Both ID token and custom token methods failed:", fallbackError);
+                });
+        });
+}
 
-    auth.onAuthStateChanged(user => {
-        currentUser = user;
-        if (user) {
-            userStatus.textContent = `Logged in as ${user.displayName || user.email}`;
-            loginButton.style.display = 'none';
-            if (loginPromptMessage) {
-                loginPromptMessage.textContent = ''; // Clear the prompt message text
-                loginPromptMessage.style.display = 'none'; // Hide prompt when logged in
-            }
-            logoutButton.style.display = 'inline-block';
-            savePrayerButton.style.display = 'block'; // Make save button block to take full width
-            mySavedPrayersHeading.style.display = 'block';
-            if(settingsButton) settingsButton.style.display = 'inline-block'; // Show settings button
-            savedPrayersSection.style.display = 'block'; // Show the whole section
-            calendarContainer.style.display = 'block'; // Show calendar by default
-        } else {
-            userStatus.textContent = 'Not logged in.';
-            loginButton.style.display = 'inline-block';
-            if (loginPromptMessage) {
-                loginPromptMessage.textContent = "Login with your Google account to save prayers and customize your experience.";
-                loginPromptMessage.style.display = 'inline'; // Show prompt when not logged in
-            }
-            logoutButton.style.display = 'none';
-            savePrayerButton.style.display = 'none';
-            calendarContainer.style.display = 'none';
-            if(settingsButton) settingsButton.style.display = 'none'; // Hide settings button
-            recalledPrayerContainer.style.display = 'none';
-            recalledPrayerListContainer.style.display = 'none';
-            calendarGrid.innerHTML = ''; // Clear calendar grid
-            currentMonthYearDisplay.textContent = 'Month Year'; // Reset calendar header
+/**
+ * Legacy function for custom tokens - keeping for backwards compatibility
+ * @param {string} customToken The Firebase custom authentication token
+ */
+function receiveCustomToken(customToken) {
+    console.log("Web app received custom token. Attempting sign-in...");
+    if (!firebase || !firebase.auth) {
+        console.error("Firebase Auth is not initialized. Cannot sign in with custom token.");
+        return;
+    }
+
+    firebase.auth().signInWithCustomToken(customToken)
+        .then((userCredential) => {
+            const user = userCredential.user;
+            console.log("Web app: Signed in with custom token!", user.uid);
+        })
+        .catch((error) => {
+            console.error("Web app: Error signing in with custom token:", error.code, error.message);
+        });
+}
+
+// Expose functions to the global window object so they can be called from the native iOS app
+window.receiveIDToken = receiveIDToken;
+window.receiveCustomToken = receiveCustomToken;
+
+// Handle any pending ID token that was set before the functions were available
+if (window.pendingIDToken) {
+    console.log("Processing pending ID token...");
+    receiveIDToken(window.pendingIDToken);
+    delete window.pendingIDToken;
+}
+
+auth.onAuthStateChanged(user => {
+    currentUser = user;
+    if (user) {
+        userStatus.textContent = `Logged in as ${user.displayName || user.email}`;
+        loginButton.style.display = 'none';
+        if (loginPromptMessage) {
+            loginPromptMessage.textContent = '';
+            loginPromptMessage.style.display = 'none';
         }
-    });
+        logoutButton.style.display = 'inline-block';
+        savePrayerButton.style.display = 'block';
+        mySavedPrayersHeading.style.display = 'block';
+        if(settingsButton) settingsButton.style.display = 'inline-block';
+        savedPrayersSection.style.display = 'block';
+        calendarContainer.style.display = 'block';
+    } else {
+        userStatus.textContent = 'Not logged in.';
+        loginButton.style.display = 'inline-block';
+        if (loginPromptMessage) {
+            loginPromptMessage.textContent = "Login with your Google account to save prayers and customize your experience.";
+            loginPromptMessage.style.display = 'inline';
+        }
+        logoutButton.style.display = 'none';
+        savePrayerButton.style.display = 'none';
+        calendarContainer.style.display = 'none';
+        if(settingsButton) settingsButton.style.display = 'none';
+        recalledPrayerContainer.style.display = 'none';
+        recalledPrayerListContainer.style.display = 'none';
+        calendarGrid.innerHTML = '';
+        currentMonthYearDisplay.textContent = 'Month Year';
+    }
+});
 
     // --- Firestore: Save and Load Prayers ---
     async function saveCurrentPrayer() { // Made the function async
