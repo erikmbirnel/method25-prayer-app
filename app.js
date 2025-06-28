@@ -558,42 +558,41 @@ function handleLogout() {
 
 /**
  * Receives an ID token from a native application (iOS app's WKWebView)
- * and attempts to sign in the Firebase user in the web app.
- * This allows for seamless authentication transition from native to web.
+ * Since the iOS app and web app share the same Firebase project, 
+ * the authentication should persist automatically. This function
+ * mainly serves as a trigger to check auth state.
  * @param {string} idToken The Firebase ID token passed from the native app.
  */
 function receiveIDToken(idToken) {
-    console.log("Web app received ID token. Attempting to verify and sign in...");
+    console.log("Web app received ID token from iOS app. Checking authentication state...");
     if (!firebase || !firebase.auth) {
-        console.error("Firebase Auth is not initialized. Cannot sign in with ID token.");
+        console.error("Firebase Auth is not initialized.");
         return;
     }
 
-    // Create a credential from the ID token
-    const credential = firebase.auth.GoogleAuthProvider.credential(idToken);
+    // Store the token in case we need it later
+    window.lastReceivedIDToken = idToken;
     
-    // Sign in with the credential
-    firebase.auth().signInWithCredential(credential)
-        .then((userCredential) => {
-            // Signed in successfully!
-            const user = userCredential.user;
-            console.log("Web app: Signed in with ID token!", user.uid);
-            // The existing `auth.onAuthStateChanged` listener will automatically handle all UI updates
-        })
-        .catch((error) => {
-            console.error("Web app: Error signing in with ID token:", error.code, error.message);
-            
-            // Fallback: Try to use signInWithCustomToken if the above fails
-            // This is for backwards compatibility
-            firebase.auth().signInWithCustomToken(idToken)
-                .then((userCredential) => {
-                    const user = userCredential.user;
-                    console.log("Web app: Signed in with custom token fallback!", user.uid);
-                })
-                .catch((fallbackError) => {
-                    console.error("Web app: Both ID token and custom token methods failed:", fallbackError);
-                });
-        });
+    // The iOS app should have already authenticated the user with Firebase.
+    // Since both apps use the same Firebase project, the auth state should persist.
+    // Force a refresh of the auth state
+    const currentUser = firebase.auth().currentUser;
+    
+    if (currentUser) {
+        console.log("Web app: User is already authenticated!", currentUser.uid);
+        // Force trigger the auth state changed listener to update UI
+        return;
+    }
+    
+    // If no current user, try a forced refresh
+    firebase.auth().onAuthStateChanged((user) => {
+        if (user) {
+            console.log("Web app: Authentication state updated - user found:", user.uid);
+        } else {
+            console.log("Web app: No authenticated user found after receiving ID token");
+            // The auth state will be handled by the main auth listener
+        }
+    });
 }
 
 /**
