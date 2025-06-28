@@ -612,6 +612,9 @@ auth.onAuthStateChanged(user => {
         if(settingsButton) settingsButton.style.display = 'inline-block';
         savedPrayersSection.style.display = 'block';
         calendarContainer.style.display = 'block';
+
+        // Render the calendar content now that the user is logged in
+        renderCalendar();
     } else {
         userStatus.textContent = 'Not logged in.';
         loginButton.style.display = 'inline-block';
@@ -1720,10 +1723,6 @@ auth.onAuthStateChanged(user => {
         releaseWakeLock(); // Ensure wake lock is released
         updateTtsStatus("Playback stopped.", false);
     }
-    // Initial render of the calendar if user is already logged in on page load
-    auth.onAuthStateChanged(user => {
-        if (user) renderCalendar();
-    });
 
     initializeApp();
 
