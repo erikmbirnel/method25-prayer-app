@@ -556,76 +556,46 @@ function handleLogout() {
         });
 }
 
-/**
- * Receives an ID token from a native application (iOS app's WKWebView)
- * Since the iOS app and web app share the same Firebase project, 
- * the authentication should persist automatically. This function
- * mainly serves as a trigger to check auth state.
- * @param {string} idToken The Firebase ID token passed from the native app.
- */
-function receiveIDToken(idToken) {
-    console.log("Web app received ID token from iOS app. Checking authentication state...");
-    if (!firebase || !firebase.auth) {
-        console.error("Firebase Auth is not initialized.");
-        return;
-    }
+// --- Native App (iOS) Communication ---
 
-    // Store the token in case we need it later
-    window.lastReceivedIDToken = idToken;
-    
-    // The iOS app should have already authenticated the user with Firebase.
-    // Since both apps use the same Firebase project, the auth state should persist.
-    // Force a refresh of the auth state
-    const currentUser = firebase.auth().currentUser;
-    
-    if (currentUser) {
-        console.log("Web app: User is already authenticated!", currentUser.uid);
-        // Force trigger the auth state changed listener to update UI
-        return;
-    }
-    
-    // If no current user, try a forced refresh
-    firebase.auth().onAuthStateChanged((user) => {
-        if (user) {
-            console.log("Web app: Authentication state updated - user found:", user.uid);
-        } else {
-            console.log("Web app: No authenticated user found after receiving ID token");
-            // The auth state will be handled by the main auth listener
-        }
-    });
-}
+// This function is designed to be called from your native iOS app.
+window.receiveIDToken = function(idToken) {
+    console.log("Web app received ID token from iOS app. Auth state will be handled by onAuthStateChanged.");
+    // The Firebase Web SDK, when running in a WKWebView from an app that shares
+    // its Firebase project, will automatically detect the authentication state.
+    // The `onAuthStateChanged` listener is the single source of truth and will
+    // fire, updating the UI correctly. We don't need to manually sign in here.
+    // This function's existence is primarily to confirm the communication bridge is working.
+};
 
-/**
- * Legacy function for custom tokens - keeping for backwards compatibility
- * @param {string} customToken The Firebase custom authentication token
- */
-function receiveCustomToken(customToken) {
+// This function handles sign-in if your backend generates a custom token.
+window.receiveCustomToken = function(customToken) {
     console.log("Web app received custom token. Attempting sign-in...");
     if (!firebase || !firebase.auth) {
         console.error("Firebase Auth is not initialized. Cannot sign in with custom token.");
         return;
     }
 
-    firebase.auth().signInWithCustomToken(customToken)
+    auth.signInWithCustomToken(customToken)
         .then((userCredential) => {
             const user = userCredential.user;
             console.log("Web app: Signed in with custom token!", user.uid);
+            // The onAuthStateChanged listener will handle the UI update.
         })
         .catch((error) => {
             console.error("Web app: Error signing in with custom token:", error.code, error.message);
         });
-}
+};
 
-// Expose functions to the global window object so they can be called from the native iOS app
-window.receiveIDToken = receiveIDToken;
-window.receiveCustomToken = receiveCustomToken;
-
-// Handle any pending ID token that was set before the functions were available
-if (window.pendingIDToken) {
-    console.log("Processing pending ID token...");
-    receiveIDToken(window.pendingIDToken);
-    delete window.pendingIDToken;
-}
+// This pattern allows the iOS app to set a token before the JS has fully loaded.
+// The iOS app would execute: `window.pendingIDToken = "THE_TOKEN";`
+document.addEventListener('DOMContentLoaded', () => {
+    if (window.pendingIDToken) {
+        console.log("Processing pending ID token...");
+        window.receiveIDToken(window.pendingIDToken);
+        delete window.pendingIDToken; // or window.pendingIDToken = null;
+    }
+});
 
 auth.onAuthStateChanged(user => {
     currentUser = user;
