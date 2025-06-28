@@ -558,44 +558,45 @@ function handleLogout() {
 
 // --- Native App (iOS) Communication ---
 
-// This function is designed to be called from your native iOS app.
-window.receiveIDToken = function(idToken) {
-    console.log("Web app received ID token from iOS app. Auth state will be handled by onAuthStateChanged.");
-    // The Firebase Web SDK, when running in a WKWebView from an app that shares
-    // its Firebase project, will automatically detect the authentication state.
-    // The `onAuthStateChanged` listener is the single source of truth and will
-    // fire, updating the UI correctly. We don't need to manually sign in here.
-    // This function's existence is primarily to confirm the communication bridge is working.
+// This function is called from the native iOS app after it has successfully
+// signed in with Google and obtained a Google ID Token.
+window.receiveIDToken = function(googleIdToken) {
+    console.log("Web app received Google ID token from iOS. Attempting to sign in...");
+    if (!auth) {
+        console.error("Firebase Auth is not initialized. Cannot process token.");
+        return;
+    }
+
+    // Create a Google credential with the ID token.
+    const credential = firebase.auth.GoogleAuthProvider.credential(googleIdToken);
+
+    // Sign in with the credential. This will trigger onAuthStateChanged.
+    auth.signInWithCredential(credential)
+        .then((result) => {
+            console.log("Web app successfully signed in with credential from iOS:", result.user.uid);
+        })
+        .catch((error) => {
+            console.error("Web app sign-in with credential from iOS failed:", error);
+            alert(`Sign-in failed: ${error.message}`);
+        });
 };
 
-// This function handles sign-in if your backend generates a custom token.
+// This function is kept for compatibility or future use with a backend that mints custom tokens.
 window.receiveCustomToken = function(customToken) {
     console.log("Web app received custom token. Attempting sign-in...");
-    if (!firebase || !firebase.auth) {
+    if (!auth) {
         console.error("Firebase Auth is not initialized. Cannot sign in with custom token.");
         return;
     }
 
     auth.signInWithCustomToken(customToken)
         .then((userCredential) => {
-            const user = userCredential.user;
-            console.log("Web app: Signed in with custom token!", user.uid);
-            // The onAuthStateChanged listener will handle the UI update.
+            console.log("Web app: Signed in with custom token!", userCredential.user.uid);
         })
         .catch((error) => {
             console.error("Web app: Error signing in with custom token:", error.code, error.message);
         });
 };
-
-// This pattern allows the iOS app to set a token before the JS has fully loaded.
-// The iOS app would execute: `window.pendingIDToken = "THE_TOKEN";`
-document.addEventListener('DOMContentLoaded', () => {
-    if (window.pendingIDToken) {
-        console.log("Processing pending ID token...");
-        window.receiveIDToken(window.pendingIDToken);
-        delete window.pendingIDToken; // or window.pendingIDToken = null;
-    }
-});
 
 auth.onAuthStateChanged(user => {
     currentUser = user;
